@@ -1,4 +1,6 @@
-import type { Metadata } from 'next'
+
+
+// import type { Metadata } from 'next'
 
 import config from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
@@ -11,7 +13,7 @@ import { RenderBlocks } from '@/utils/RenderBlocks'
 
 // export const revalidate = 3600 // Cache for 1 hour, adjust as needed
 
-export const dynamic = 'force-dynamic'
+// export const dynamic = 'force-dynamic'
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
