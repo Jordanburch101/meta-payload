@@ -44,10 +44,10 @@ export async function generateStaticParams() {
     .map(({ slug }) => ({ slug }))
 }
 
-// Add proper type definition for the params
+// Update type definition to make slug optional
 type PageProps = {
   params: {
-    slug: string
+    slug?: string
   }
 }
 
