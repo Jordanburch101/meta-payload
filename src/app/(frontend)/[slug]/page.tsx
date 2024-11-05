@@ -44,15 +44,11 @@ export async function generateStaticParams() {
     .map(({ slug }) => ({ slug }))
 }
 
-// Update type definition to make slug optional
-type PageProps = {
-  params: {
-    slug?: string
-  }
-}
-
-// Update the Page component with the correct type
-export default async function Page({ params: { slug = 'index' } }: PageProps) {
+export default async function Page({
+  params: { slug = 'index' },
+}: {
+  params: { slug?: string }
+}) {
   let page: PageType | null
 
   page = await queryPageBySlug({
