@@ -11,7 +11,7 @@ import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
 
 
-export const revalidate = 600 // 10 minutes in seconds
+export const dynamic = 'force-dynamic'
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
     const parsedSlug = decodeURIComponent(slug)
@@ -27,6 +27,7 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
       },
     })
     
+    revalidateTag(`pages-${parsedSlug}`)
     return result.docs?.[0] || null
 })
 
@@ -43,6 +44,25 @@ export async function generateStaticParams() {
       return doc?.slug !== undefined && doc.slug !== 'index'
     })
     .map(({ slug }) => ({ slug }))
+}
+
+export const generateMetadata = async ({
+  params: { slug = 'index' },
+}: {
+  params: { slug?: string }
+}): Promise<Metadata> => {
+  const page = await queryPageBySlug({ slug })
+  
+  if (!page) {
+    return {
+      title: 'Not Found',
+    }
+  }
+
+  return {
+    title: page.title,
+    // Add any other metadata you want
+  }
 }
 
 export default async function Page({
