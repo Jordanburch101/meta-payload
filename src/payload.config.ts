@@ -52,7 +52,7 @@ export default buildConfig({
         'media': {
           prefix: 'media',
           disablePayloadAccessControl: true,
-          generateFileURL: ({ filename }) => `https://${process.env.NEXT_PUBLIC_SERVER_URL}/${filename}`,
+          generateFileURL: ({ filename }) => `${process.env.S3_ENDPOINT}/${filename}`,
         },
       },
       bucket: process.env.S3_BUCKET || '',
