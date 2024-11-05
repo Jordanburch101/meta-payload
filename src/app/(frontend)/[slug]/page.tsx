@@ -8,6 +8,9 @@ import type { Page as PageType } from '../../../payload-types'
 
 import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
+import { revalidateTag } from 'next/dist/server/web/spec-extension/revalidate'
+
+export const revalidate = 3600 // Cache for 1 hour, adjust as needed
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
@@ -24,6 +27,9 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
         },
       },
     })
+  
+    revalidateTag(`page-${parsedSlug}`)
+    revalidateTag('pages')
   
     return result.docs?.[0] || null
   })
