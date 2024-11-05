@@ -34,7 +34,4 @@ export const Pages: CollectionConfig = {
             ]
         },
     ],
-    hooks: {
-        afterChange: [afterChangeHook],
-    },
 }

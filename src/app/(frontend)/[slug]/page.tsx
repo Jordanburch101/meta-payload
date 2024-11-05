@@ -3,18 +3,20 @@ import type { Metadata } from 'next'
 import config from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import React, { cache } from 'react'
-import { revalidateTag } from 'next/cache'
 
 import type { Page as PageType } from '../../../payload-types'
 
 import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
 
+// export const revalidate = 3600 // Cache for 1 hour, adjust as needed
 
 export const dynamic = 'force-dynamic'
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
+
     const parsedSlug = decodeURIComponent(slug)
+  
     const payload = await getPayloadHMR({ config })
   
     const result = await payload.find({
@@ -26,10 +28,10 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
         },
       },
     })
-    
-    revalidateTag(`pages-${parsedSlug}`)
+  
     return result.docs?.[0] || null
-})
+  })
+
 
 export async function generateStaticParams() {
   const payload = await getPayloadHMR({ config })
@@ -44,25 +46,6 @@ export async function generateStaticParams() {
       return doc?.slug !== undefined && doc.slug !== 'index'
     })
     .map(({ slug }) => ({ slug }))
-}
-
-export const generateMetadata = async ({
-  params: { slug = 'index' },
-}: {
-  params: { slug?: string }
-}): Promise<Metadata> => {
-  const page = await queryPageBySlug({ slug })
-  
-  if (!page) {
-    return {
-      title: 'Not Found',
-    }
-  }
-
-  return {
-    title: page.title,
-    // Add any other metadata you want
-  }
 }
 
 export default async function Page({
@@ -80,10 +63,9 @@ export default async function Page({
     return notFound()
   }
 
-
-
   return (
     <div className="pt-16 pb-24">
+
       <RenderBlocks blocks={page.layout} />
     </div>
   )
