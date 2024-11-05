@@ -2,6 +2,7 @@ import { Cover } from "@/blocks/cover/schema";
 import { RichText } from "@/blocks/richText/schema";
 import { Image } from "@/blocks/image/schema";
 import { CollectionConfig } from "payload";
+import { afterChange, afterDelete } from '../hooks/revalidate'
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -33,4 +34,8 @@ export const Pages: CollectionConfig = {
             ]
         },
     ],
+    hooks: {
+        afterChange: [afterChange],
+        afterDelete: [afterDelete],
+    },
 }

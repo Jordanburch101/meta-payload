@@ -15,8 +15,6 @@ import { Header } from './globals/Header'
 import { Footer } from './globals/Footer'
 
 
-
-
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 

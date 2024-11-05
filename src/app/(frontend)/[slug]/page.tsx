@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import config from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import React, { cache } from 'react'
+import { revalidateTag } from 'next/cache'
 
 import type { Page as PageType } from '../../../payload-types'
 
@@ -11,12 +12,10 @@ import { RenderBlocks } from '@/utils/RenderBlocks'
 
 // export const revalidate = 3600 // Cache for 1 hour, adjust as needed
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 600 // 10 minutes in seconds
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
-
     const parsedSlug = decodeURIComponent(slug)
-  
     const payload = await getPayloadHMR({ config })
   
     const result = await payload.find({
@@ -28,10 +27,9 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
         },
       },
     })
-  
+    
     return result.docs?.[0] || null
-  })
-
+})
 
 export async function generateStaticParams() {
   const payload = await getPayloadHMR({ config })
@@ -63,9 +61,10 @@ export default async function Page({
     return notFound()
   }
 
+
+
   return (
     <div className="pt-16 pb-24">
-
       <RenderBlocks blocks={page.layout} />
     </div>
   )
