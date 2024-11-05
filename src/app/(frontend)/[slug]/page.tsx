@@ -10,7 +10,6 @@ import type { Page as PageType } from '../../../payload-types'
 import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
 
-// export const revalidate = 3600 // Cache for 1 hour, adjust as needed
 
 export const revalidate = 600 // 10 minutes in seconds
 
