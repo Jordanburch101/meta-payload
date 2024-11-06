@@ -12,7 +12,7 @@ export default function RootLayout({
   }) {
     return (
       <html lang="en">
-        <body className="flex flex-col h-screen justify-between">
+        <body className="flex flex-col h-screen justify-between dark">
           <HeaderServer />
           {/* Layout UI */}
           <main className="mb-auto">{children}</main>

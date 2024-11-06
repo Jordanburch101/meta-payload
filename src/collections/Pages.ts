@@ -1,8 +1,10 @@
 import { Cover } from "@/blocks/cover/schema";
 import { RichText } from "@/blocks/richText/schema";
 import { Image } from "@/blocks/image/schema";
+import { HeroHighlight } from "@/blocks/heroHighlight/schema";
 import { CollectionConfig } from "payload";
-import { afterChangeHook } from '../hooks/revalidate'
+import { Spotlight } from "@/blocks/spotlight/schema";
+
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -31,6 +33,8 @@ export const Pages: CollectionConfig = {
                 Cover,
                 RichText,
                 Image,
+                HeroHighlight,
+                Spotlight
             ]
         },
     ],

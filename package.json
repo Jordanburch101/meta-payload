@@ -20,13 +20,20 @@
     "@payloadcms/payload-cloud": "beta",
     "@payloadcms/richtext-lexical": "beta",
     "@payloadcms/storage-s3": "beta",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "cross-env": "^7.0.3",
+    "framer-motion": "^11.11.11",
     "graphql": "^16.9.0",
+    "lucide-react": "^0.454.0",
+    "mini-svg-data-uri": "^1.4.4",
     "next": "15.0.0",
     "payload": "beta",
     "react": "19.0.0-rc-65a56d0e-20241020",
     "react-dom": "19.0.0-rc-65a56d0e-20241020",
-    "sharp": "0.32.6"
+    "sharp": "0.32.6",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

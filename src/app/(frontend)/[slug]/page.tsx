@@ -66,7 +66,7 @@ export default async function Page({
   }
 
   return (
-    <div className="pt-16 pb-24">
+    <div>
 
       <RenderBlocks blocks={page.layout} />
     </div>

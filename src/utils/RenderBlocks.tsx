@@ -6,11 +6,14 @@ import React, { Fragment } from 'react'
 import CoverBlockServer from '@/blocks/cover/Server'
 import ImageBlockServer from '@/blocks/image/Server'
 import RichTextBlockServer from '@/blocks/richText/Server'
-
+import HeroHighlightServer from '@/blocks/heroHighlight/Server'
+import SpotlightServer from '@/blocks/spotlight/Server'
 const blockComponents = {
     cover: CoverBlockServer,
     image: ImageBlockServer,
-    'rich-text': RichTextBlockServer
+    'rich-text': RichTextBlockServer,
+    'hero-highlight': HeroHighlightServer,
+    spotlight: SpotlightServer
 }
 
 export const RenderBlocks: React.FC<{
@@ -31,7 +34,7 @@ export const RenderBlocks: React.FC<{
 
             if (Block) {
               return (
-                <div className="my-16" key={index}>
+                <div className="" key={index}>
                   <Block {...(({ blockName, blockType, ...rest }: typeof block) => rest)(block) as any} />
                 </div>
               )
