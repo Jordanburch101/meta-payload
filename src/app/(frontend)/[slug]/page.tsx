@@ -58,10 +58,11 @@ export async function generateStaticParams() {
 }
 
 export default async function Page({
-  params: { slug = 'index' },
+  params,
 }: {
   params: { slug?: string }
 }) {
+  const { slug = 'index' } = await Promise.resolve(params)
   let page: PageType | null
   const renderTime = new Date().toISOString()
 

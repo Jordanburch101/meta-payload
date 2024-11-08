@@ -32,9 +32,10 @@ This template includes a pre-configured setup with:
   - [x] Image uploads
   - [x] File management
   - [x] Media library
-- [ ] Pages
+- [x] Pages
   - [x] Dynamic page builder
-  - [ ] SEO fields
+  - [x] SEO fields
+  - [x] Robots.txt (with documentation)
   - [x] Slug management
 
 ### Features
@@ -65,3 +66,6 @@ This template includes a pre-configured setup with:
 - [ ] Performance optimization
 - [ ] Security hardening
 - [ ] Documentation
+- [ ] Sentry
+- [x] Speed Insights
+- [ ] PostHog Analytics
