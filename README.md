@@ -43,7 +43,7 @@ This template includes a pre-configured setup with:
   - [x] Content blocks system
   - [x] Custom block types
   - [x] Block templates
-- [ ] Rich Text Editor
+- [x] Rich Text Editor
   - [x] Custom formatting options
   - [x] Media embeddings
   - [x] Link management

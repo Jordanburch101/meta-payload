@@ -8,12 +8,14 @@ import ImageBlockServer from '@/blocks/image/Server'
 import RichTextBlockServer from '@/blocks/richText/Server'
 import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
+import {FormBlockClient} from '@/blocks/form/Client'
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
     'spotlight': SpotlightServer,
     'cover': CoverBlockServer,
     'image': ImageBlockServer,
     'rich-text': RichTextBlockServer,
+    'formBlock': FormBlockClient,
 }
 
 export const RenderBlocks: React.FC<{
@@ -29,8 +31,6 @@ export const RenderBlocks: React.FC<{
         {blocks.map((block, index) => {
           const { blockName, blockType } = block
           
-          // Add this console.log to debug
-          console.log('Block type:', blockType, 'Available components:', Object.keys(blockComponents))
 
           if (blockType && blockType in blockComponents) {
             const Block = blockComponents[blockType]

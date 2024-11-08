@@ -8,6 +8,7 @@ import { revalidateNextCache } from "@/hooks/revalidateNextCache";
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
 import { slugField } from "@/fields/slug";
+import { FormBlock } from "@/blocks/form/schema";
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -57,7 +58,8 @@ export const Pages: CollectionConfig = {
                             RichText,
                             Image,
                             HeroHighlight,
-                            Spotlight
+                            Spotlight,
+                            FormBlock
                         ]
                     }]
                 },

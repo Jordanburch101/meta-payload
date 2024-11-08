@@ -1,4 +1,4 @@
-import { serializeLexical } from "@/utils/serialize"
+import { serializeLexical } from "@/components/RichText/serialize"
 
 
 export default function RichTextBlockServer({content}: {content: any}) {

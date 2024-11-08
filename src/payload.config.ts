@@ -4,6 +4,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
+import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -89,6 +90,23 @@ export default buildConfig({
     seoPlugin({
       generateTitle,
       generateURL,
+    }),
+    // form builder plugin
+    formBuilderPlugin({
+      // see below for a list of available options
+      fields: {
+        text: true,
+        textarea: true,
+        select: true,
+        email: true,
+        state: true,
+        country: true,
+        checkbox: true,
+        number: true,
+        message: true,
+        payment: false,
+      },
+      redirectRelationships: ['pages'],
     }),
   ],
 })
