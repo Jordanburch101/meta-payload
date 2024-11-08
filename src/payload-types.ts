@@ -335,12 +335,7 @@ export interface Form {
     [k: string]: unknown;
   } | null;
   redirect?: {
-    type?: ('reference' | 'custom') | null;
-    reference?: {
-      relationTo: 'pages';
-      value: number | Page;
-    } | null;
-    url?: string | null;
+    url: string;
   };
   emails?:
     | {
@@ -683,8 +678,6 @@ export interface FormsSelect<T extends boolean = true> {
   redirect?:
     | T
     | {
-        type?: T;
-        reference?: T;
         url?: T;
       };
   emails?:
