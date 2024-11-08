@@ -10,6 +10,10 @@ import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, Pr
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
+    admin: {
+        useAsTitle: 'title',
+        defaultColumns: ['title', 'slug', 'updatedAt'],
+    },
     fields: [
         {
             name: 'title',
@@ -26,7 +30,6 @@ export const Pages: CollectionConfig = {
                 position: 'sidebar',
             },
         },
-
         {
             type: 'tabs',
             tabs: [

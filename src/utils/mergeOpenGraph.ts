@@ -12,6 +12,7 @@ const defaultOpenGraph: Metadata['openGraph'] = {
   ],
   siteName: 'Payload Website Template',
   title: 'Payload Website Template',
+  url: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
 }
 
 export const mergeOpenGraph = (og?: Metadata['openGraph']): Metadata['openGraph'] => {

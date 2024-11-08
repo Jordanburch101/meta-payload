@@ -19,10 +19,8 @@ import type { Page } from '@/payload-types'
 
 export type NodeTypes =
   | DefaultNodeTypes
-  | SerializedBlockNode<
-      | Extract<Page['layout'][0], { blockType: 'cta' }>
-      | Extract<Page['layout'][0], { blockType: 'mediaBlock' }>
-    >
+  | SerializedBlockNode
+
 
 type Props = {
   nodes: NodeTypes[]
@@ -80,10 +78,10 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
           if (node.children == null) {
             return null
           } else {
-            if (node?.type === 'list' && node?.listType === 'check') {
+            if (node?.type === 'list' && 'listType' in node && node.listType === 'check') {
               for (const item of node.children) {
-                if ('checked' in item) {
-                  if (!item?.checked) {
+                if (item && typeof item === 'object' && 'checked' in item) {
+                  if (!item.checked) {
                     item.checked = false
                   }
                 }
@@ -103,6 +101,16 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
             return null
           }
 
+          switch (blockType) {
+            case 'cta':
+              // Return CTA component
+              return null // Replace with actual CTA rendering
+            case 'mediaBlock':
+              // Return MediaBlock component
+              return null // Replace with actual MediaBlock rendering
+            default:
+              return null
+          }
         } else {
           switch (node.type) {
             case 'linebreak': {
@@ -124,7 +132,7 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
               )
             }
             case 'heading': {
-              const Tag = node?.tag
+              const Tag = node?.tag as keyof JSX.IntrinsicElements
               const alignment = (node.format as TextAlignment) || 'left'
               const alignmentClass = {
                 left: 'text-left',
@@ -140,7 +148,7 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
               )
             }
             case 'list': {
-              const Tag = node?.tag
+              const Tag = node?.tag as keyof JSX.IntrinsicElements
               return (
                 <Tag className="list col-start-2" key={index}>
                   {serializedChildren}

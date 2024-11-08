@@ -29,7 +29,7 @@ export const generateMeta = async (args: { doc: Page }): Promise<Metadata> => {
           ]
         : undefined,
       title,
-      url: Array.isArray(doc?.slug) ? doc?.slug.join('/') : '/',
+      url: `${process.env.NEXT_PUBLIC_SERVER_URL}${Array.isArray(doc?.slug) ? `/${doc?.slug.join('/')}` : '/'}`,
     }),
     title,
   }

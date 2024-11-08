@@ -9,11 +9,11 @@ import RichTextBlockServer from '@/blocks/richText/Server'
 import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
 const blockComponents = {
-    'cover': CoverBlockServer,
-    image: ImageBlockServer,
-    'rich-text': RichTextBlockServer,
     'hero-highlight': HeroHighlightServer,
-    spotlight: SpotlightServer
+    'spotlight': SpotlightServer,
+    'cover': CoverBlockServer,
+    'image': ImageBlockServer,
+    'rich-text': RichTextBlockServer,
 }
 
 export const RenderBlocks: React.FC<{
@@ -28,6 +28,9 @@ export const RenderBlocks: React.FC<{
       <Fragment>
         {blocks.map((block, index) => {
           const { blockName, blockType } = block
+          
+          // Add this console.log to debug
+          console.log('Block type:', blockType, 'Available components:', Object.keys(blockComponents))
 
           if (blockType && blockType in blockComponents) {
             const Block = blockComponents[blockType]
