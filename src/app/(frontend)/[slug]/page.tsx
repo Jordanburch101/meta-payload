@@ -1,5 +1,4 @@
-
-// import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 
 import config from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
@@ -9,9 +8,19 @@ import type { Page as PageType } from '../../../payload-types'
 
 import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
+import { generateMeta } from '@/utils/generateMeta'
 
 // Enable caching with revalidation every hour
 export const revalidate = 3600
+
+export async function generateMetadata({ params: paramsPromise }: { params: { slug: string } }): Promise<Metadata> {
+  const { slug = 'home' } = await paramsPromise
+  const page = await queryPageBySlug({
+    slug,
+  })
+
+  return generateMeta({ doc: page })
+}
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
@@ -69,7 +78,7 @@ export default async function Page({
       <div className="text-xs text-gray-400 p-2 m-2 bg-gray-100 rounded-md font-mono">
         Rendered at: {renderTime}
       </div>
-      <RenderBlocks blocks={page.layout} />
+      <RenderBlocks blocks={page.layout?.layout || []} />
     </div>
   )
 }

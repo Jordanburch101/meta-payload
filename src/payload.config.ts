@@ -2,6 +2,8 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { resendAdapter } from '@payloadcms/email-resend'
+import { seoPlugin } from '@payloadcms/plugin-seo'
+import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -15,6 +17,17 @@ import { s3Storage } from '@payloadcms/storage-s3'
 import { Header } from './globals/Header'
 import { Footer } from './globals/Footer'
 
+import { Page } from './payload-types'
+
+const generateTitle: GenerateTitle<Page> = ({ doc }) => {
+  return doc?.title ? `${doc.title} | Payload Website Template` : 'Payload Website Template'
+}
+
+const generateURL: GenerateURL<Page> = ({ doc }) => {
+  return doc?.slug
+    ? `${process.env.NEXT_PUBLIC_SERVER_URL!}/${doc.slug}`
+    : process.env.NEXT_PUBLIC_SERVER_URL!
+}
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -71,6 +84,11 @@ export default buildConfig({
         endpoint: process.env.S3_ENDPOINT || '',
         forcePathStyle: true,
       },
+    }),
+    // seo plugin
+    seoPlugin({
+      generateTitle,
+      generateURL,
     }),
   ],
 })

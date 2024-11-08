@@ -9,7 +9,7 @@ import RichTextBlockServer from '@/blocks/richText/Server'
 import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
 const blockComponents = {
-    cover: CoverBlockServer,
+    'cover': CoverBlockServer,
     image: ImageBlockServer,
     'rich-text': RichTextBlockServer,
     'hero-highlight': HeroHighlightServer,
@@ -17,7 +17,7 @@ const blockComponents = {
 }
 
 export const RenderBlocks: React.FC<{
-  blocks: Page['layout'][0][]
+  blocks: Page['layout']['layout']
 }> = (props) => {
   const { blocks } = props
 

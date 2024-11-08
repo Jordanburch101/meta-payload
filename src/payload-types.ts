@@ -72,55 +72,62 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  layout: (
-    | {
-        title?: string | null;
-        subtitle?: string | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'cover';
-      }
-    | {
-        content: {
-          root: {
-            type: string;
-            children: {
+  layout: {
+    layout: (
+      | {
+          title?: string | null;
+          subtitle?: string | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'cover';
+        }
+      | {
+          content: {
+            root: {
               type: string;
+              children: {
+                type: string;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+              indent: number;
               version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
+            };
+            [k: string]: unknown;
           };
-          [k: string]: unknown;
-        };
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'rich-text';
-      }
-    | {
-        image: number | Media;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'image';
-      }
-    | {
-        title: string;
-        highlight: string;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'hero-highlight';
-      }
-    | {
-        title: string;
-        description: string;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'spotlight';
-      }
-  )[];
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'rich-text';
+        }
+      | {
+          image: number | Media;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'image';
+        }
+      | {
+          title: string;
+          highlight: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'hero-highlight';
+        }
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'spotlight';
+        }
+    )[];
+  };
+  meta?: {
+    title?: string | null;
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -232,44 +239,57 @@ export interface PagesSelect<T extends boolean = true> {
   layout?:
     | T
     | {
-        cover?:
+        layout?:
           | T
           | {
-              title?: T;
-              subtitle?: T;
-              id?: T;
-              blockName?: T;
+              cover?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              'rich-text'?:
+                | T
+                | {
+                    content?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              image?:
+                | T
+                | {
+                    image?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              'hero-highlight'?:
+                | T
+                | {
+                    title?: T;
+                    highlight?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              spotlight?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
             };
-        'rich-text'?:
-          | T
-          | {
-              content?: T;
-              id?: T;
-              blockName?: T;
-            };
-        image?:
-          | T
-          | {
-              image?: T;
-              id?: T;
-              blockName?: T;
-            };
-        'hero-highlight'?:
-          | T
-          | {
-              title?: T;
-              highlight?: T;
-              id?: T;
-              blockName?: T;
-            };
-        spotlight?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              id?: T;
-              blockName?: T;
-            };
+      };
+  meta?:
+    | T
+    | {
+        overview?: T;
+        title?: T;
+        image?: T;
+        description?: T;
+        preview?: T;
       };
   updatedAt?: T;
   createdAt?: T;

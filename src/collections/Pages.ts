@@ -6,6 +6,7 @@ import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
 import { revalidateNextCache } from "@/hooks/revalidateNextCache";
 
+import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -25,19 +26,56 @@ export const Pages: CollectionConfig = {
                 position: 'sidebar',
             },
         },
+
         {
-            name: 'layout',
-            label: 'Layout',
-            type: 'blocks',
-            required: true,
-            blocks: [
-                Cover,
-                RichText,
-                Image,
-                HeroHighlight,
-                Spotlight
-            ]
+            type: 'tabs',
+            tabs: [
+                {
+                    name: 'layout',
+                    label: 'Layout',
+                    fields: [{
+                        type: 'blocks',
+                        name: 'layout',
+                        required: true,
+                        blocks: [
+                            Cover,
+                            RichText,
+                            Image,
+                            HeroHighlight,
+                            Spotlight
+                        ]
+                    }]
+                },
+                {
+                    name: 'meta',
+                    label: 'SEO',
+                    fields: [
+                      OverviewField({
+                        titlePath: 'meta.title',
+                        descriptionPath: 'meta.description',
+                        imagePath: 'meta.image',
+                      }),
+                      MetaTitleField({
+                        hasGenerateFn: true,
+                      }),
+                      MetaImageField({
+                        relationTo: 'media',
+                      }),
+          
+                      MetaDescriptionField({}),
+                      PreviewField({
+                        // if the `generateUrl` function is configured
+                        hasGenerateFn: true,
+          
+                        // field paths to match the target field for data
+                        titlePath: 'meta.title',
+                        descriptionPath: 'meta.description',
+                      }),
+                    ],
+                },
+            ],
         },
+
     ],
     hooks: {
         afterChange: [revalidateNextCache],
