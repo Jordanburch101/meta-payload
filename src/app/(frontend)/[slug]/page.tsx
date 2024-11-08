@@ -55,6 +55,7 @@ export default async function Page({
   params: { slug?: string }
 }) {
   let page: PageType | null
+  const renderTime = new Date().toISOString()
 
   page = await queryPageBySlug({
     slug,
@@ -67,7 +68,7 @@ export default async function Page({
   return (
     <div>
       <div className="text-xs text-gray-400 p-2 m-2 bg-gray-100 rounded-md font-mono">
-        Rendered at: {new Date().toISOString()}
+        Rendered at: {renderTime}
       </div>
       <RenderBlocks blocks={page.layout} />
     </div>
