@@ -7,12 +7,14 @@ import { Spotlight } from "@/blocks/spotlight/schema";
 import { revalidateNextCache } from "@/hooks/revalidateNextCache";
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
+import { slugField } from "@/fields/slug";
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
     admin: {
         useAsTitle: 'title',
         defaultColumns: ['title', 'slug', 'updatedAt'],
+        
     },
     fields: [
         {
@@ -22,14 +24,24 @@ export const Pages: CollectionConfig = {
             required: true,
         },
         {
-            name: 'slug',
-            label: 'Slug',
-            type: 'text',
+            name: 'createdBy',
+            type: 'relationship',
+            relationTo: 'users',
             required: true,
             admin: {
                 position: 'sidebar',
+                readOnly: true,
+            },
+            hooks: {
+                beforeChange: [
+                    ({ req }) => {
+                        if (!req.user) throw new Error('User is required');
+                        return req.user.id;
+                    },
+                ],
             },
         },
+        ...slugField(),
         {
             type: 'tabs',
             tabs: [

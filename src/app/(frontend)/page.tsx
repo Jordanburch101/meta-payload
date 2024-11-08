@@ -4,5 +4,5 @@ import Page from './[slug]/page'
 export const revalidate = 3600
 
 export default async function RootPage() {
-  return Page({ params: { slug: 'index' } })
+  return Page({ params: { slug: 'home' } })
 }

@@ -28,7 +28,9 @@
       ],
       "@payload-config": [
         "./src/payload.config.ts"
-      ]
+      ],
+      "@payloadcms/*": ["node_modules/@payloadcms/*"]
+
     },
     "target": "ES2017"
   },

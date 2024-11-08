@@ -52,7 +52,7 @@ export async function generateStaticParams() {
 
   return pages.docs
     ?.filter((doc): doc is PageType => {
-      return doc?.slug !== undefined && doc.slug !== 'index'
+      return doc?.slug !== undefined && doc.slug !== 'home'
     })
     .map(({ slug }) => ({ slug }))
 }
@@ -62,7 +62,7 @@ export default async function Page({
 }: {
   params: { slug?: string }
 }) {
-  const { slug = 'index' } = await Promise.resolve(params)
+  const { slug = 'home' } = await Promise.resolve(params)
   let page: PageType | null
   const renderTime = new Date().toISOString()
 
