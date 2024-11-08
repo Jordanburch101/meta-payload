@@ -24,7 +24,7 @@ This template includes a pre-configured setup with:
 - [x] API route setup
 
 ### Collections
-- [ ] Users
+- [x] Users
   - [x] Basic user fields
   - [ ] Roles and permissions
   - [x] Profile management
@@ -48,10 +48,10 @@ This template includes a pre-configured setup with:
   - [x] Media embeddings
   - [x] Link management
   - [ ] Iframe embedding
-- [ ] Email System
-  - [ ] Email templates
+- [x] Email System
+  - [x] Email Form Selector
   - [x] Transactional emails
-  - [ ] Email builder interface
+  - [x] Email builder interface
 - [ ] Live Preview
   - [ ] Real-time content preview
   - [ ] Multi-device preview
