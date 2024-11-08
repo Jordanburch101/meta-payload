@@ -1,8 +1,9 @@
 import { serializeLexical } from "@/utils/serialize"
 
+
 export default function RichTextBlockServer({content}: {content: any}) {
     return (
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto my-12">
             <div className="richText">
                 {serializeLexical({nodes: content.root.children})}
             </div>

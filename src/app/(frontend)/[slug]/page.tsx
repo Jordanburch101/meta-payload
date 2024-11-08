@@ -1,3 +1,4 @@
+
 // import type { Metadata } from 'next'
 
 import config from '@payload-config'
@@ -11,8 +12,6 @@ import { RenderBlocks } from '@/utils/RenderBlocks'
 
 // Enable caching with revalidation every hour
 export const revalidate = 3600
-
-// export const dynamic = 'force-dynamic'
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 

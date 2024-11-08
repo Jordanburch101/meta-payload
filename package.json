@@ -20,6 +20,7 @@
     "@payloadcms/payload-cloud": "beta",
     "@payloadcms/richtext-lexical": "beta",
     "@payloadcms/storage-s3": "beta",
+    "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",

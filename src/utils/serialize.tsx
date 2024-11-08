@@ -1,5 +1,8 @@
 import React, { Fragment, JSX } from 'react'
 import { DefaultNodeTypes, SerializedBlockNode } from '@payloadcms/richtext-lexical'
+import { CMSLink } from '@/components/Link'
+import { Image } from '@/components/Image'
+import { Media } from '@/payload-types'
 
 
 // @ts-nocheck
@@ -24,6 +27,8 @@ export type NodeTypes =
 type Props = {
   nodes: NodeTypes[]
 }
+
+type TextAlignment = 'left' | 'right' | 'center' | 'justify'
 
 export function serializeLexical({ nodes }: Props): JSX.Element {
   return (
@@ -104,16 +109,32 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
               return <br className="col-start-2" key={index} />
             }
             case 'paragraph': {
+              const alignment = (node.format as TextAlignment) || 'left'
+              const alignmentClass = {
+                left: 'text-left',
+                center: 'text-center',
+                right: 'text-right',
+                justify: 'text-justify',
+              }[alignment] || 'text-left'
+
               return (
-                <p className="col-start-2" key={index}>
+                <p className={`col-start-2 ${alignmentClass}`} key={index}>
                   {serializedChildren}
                 </p>
               )
             }
             case 'heading': {
               const Tag = node?.tag
+              const alignment = (node.format as TextAlignment) || 'left'
+              const alignmentClass = {
+                left: 'text-left',
+                center: 'text-center',
+                right: 'text-right',
+                justify: 'text-justify',
+              }[alignment] || 'text-left'
+
               return (
-                <Tag className="col-start-2" key={index}>
+                <Tag className={`col-start-2 ${alignmentClass}`} key={index}>
                   {serializedChildren}
                 </Tag>
               )
@@ -156,6 +177,34 @@ export function serializeLexical({ nodes }: Props): JSX.Element {
                 </blockquote>
               )
             }
+            case 'upload': {
+              const media = node.value as Media
+              return (
+                <div key={index} className="col-start-2">
+                  <Image image={media} />
+                </div>
+              )
+            }
+            case 'link': {
+              const fields = node.fields
+
+              return (
+                <CMSLink
+                  key={index}
+                  newTab={Boolean(fields?.newTab)}
+                  reference={fields.doc as any}
+                  type={fields.linkType === 'internal' ? 'reference' : 'custom'}
+                  url={fields.url}
+                >
+                  {serializedChildren}
+                </CMSLink>
+              )
+            }
+
+            case 'horizontalrule': {
+              return <hr className="col-start-2" key={index} />
+            }
+
 
             default:
               return null
