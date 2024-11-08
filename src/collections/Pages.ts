@@ -4,6 +4,7 @@ import { Image } from "@/blocks/image/schema";
 import { HeroHighlight } from "@/blocks/heroHighlight/schema";
 import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
+import { revalidateNextCache } from "@/hooks/revalidateNextCache";
 
 
 export const Pages: CollectionConfig = {
@@ -38,4 +39,7 @@ export const Pages: CollectionConfig = {
             ]
         },
     ],
+    hooks: {
+        afterChange: [revalidateNextCache],
+    },
 }

@@ -1,5 +1,3 @@
-
-
 // import type { Metadata } from 'next'
 
 import config from '@payload-config'
@@ -11,7 +9,8 @@ import type { Page as PageType } from '../../../payload-types'
 import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
 
-// export const revalidate = 3600 // Cache for 1 hour, adjust as needed
+// Enable caching with revalidation every hour
+export const revalidate = 3600
 
 // export const dynamic = 'force-dynamic'
 
@@ -67,7 +66,9 @@ export default async function Page({
 
   return (
     <div>
-
+      <div className="text-xs text-gray-400 p-2 m-2 bg-gray-100 rounded-md font-mono">
+        Rendered at: {new Date().toISOString()}
+      </div>
       <RenderBlocks blocks={page.layout} />
     </div>
   )
