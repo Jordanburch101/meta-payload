@@ -1,5 +1,6 @@
 import './globals.css'
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { CSPostHogProvider } from '@/app/_analytics/providers'
 import HeaderServer from '@/blocks/global/Header/Server'
 import FooterServer from '@/blocks/global/Footer/Server'
 
@@ -16,14 +17,16 @@ export default function RootLayout({
     children: React.ReactNode
   }) {
     return (
+      <CSPostHogProvider>
       <html lang="en">
-        <body className="flex flex-col h-screen justify-between dark">
-          <HeaderServer />
-          {/* Layout UI */}
-          <main className="mb-auto">{children}</main>
-          <SpeedInsights />
-          <FooterServer />
-        </body>
-      </html>
+          <body className="flex flex-col h-screen justify-between dark">
+            <HeaderServer />
+            {/* Layout UI */}
+            <main className="mb-auto">{children}</main>
+            <SpeedInsights />
+            <FooterServer />
+          </body>
+        </html>
+      </CSPostHogProvider>
     )
   }
