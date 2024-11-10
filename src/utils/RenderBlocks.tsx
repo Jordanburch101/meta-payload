@@ -1,6 +1,3 @@
-import { Cover } from '@/blocks/cover/schema'
-import { RichText } from '@/blocks/richText/schema'
-import { Image } from '@/blocks/image/schema'
 import { Page } from '@/payload-types'
 import React, { Fragment } from 'react'
 import CoverBlockServer from '@/blocks/cover/Server'

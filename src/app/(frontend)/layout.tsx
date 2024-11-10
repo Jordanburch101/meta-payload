@@ -1,4 +1,4 @@
-import './globals.css'
+import './global.css'
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CSPostHogProvider } from '@/app/_analytics/providers'
 import HeaderServer from '@/blocks/global/Header/Server'
