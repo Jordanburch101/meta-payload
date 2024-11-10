@@ -55,6 +55,7 @@ This template includes a pre-configured setup with:
 - [ ] Live Preview
   - [ ] Real-time content preview
   - [ ] Multi-device preview
+  - [ ] Versioning
   - [ ] Draft management
 - [ ] Redirects
   - [ ] 301/302 redirects
