@@ -55,46 +55,43 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
   return result.docs?.[0] || null
 })
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug = 'home' } = params
-  const page = await queryPageBySlug({
-    slug,
-  })
-
-  return generateMeta({ doc: page })
-}
-
 type Args = {
-  params: {
+  params: Promise<{
+    slug?: string
+  }> | {
     slug?: string
   }
 }
 
 export default async function Page({ params }: Args) {
-  const { slug = 'home' } = params
-  const url = '/' + slug
-  const { isEnabled: isDraft } = await draftMode()
+  const resolvedParams = 'then' in params ? await params : params
+  const { slug = 'home' } = resolvedParams
+  
   let page: PageType | null
-
   page = await queryPageBySlug({
     slug,
   })
 
   if (!page) {
-    // return <PayloadRedirects url={url} />
     notFound()
   }
 
-  const { layout } = page
-
   return (
     <article className="pt-16 pb-24">
-      {/* <PageClient /> */}
-      {/* Allows redirects for valid pages too */}
-      {/* <PayloadRedirects disableNotFound url={url} /> */}
       <RenderBlocks blocks={page.layout?.layout || []} />
     </article>
   )
+}
+
+export async function generateMetadata({ params }: Args): Promise<Metadata> {
+  const resolvedParams = 'then' in params ? await params : params
+  const { slug = 'home' } = resolvedParams
+  
+  const page = await queryPageBySlug({
+    slug,
+  })
+
+  return generateMeta({ doc: page })
 }
 
 

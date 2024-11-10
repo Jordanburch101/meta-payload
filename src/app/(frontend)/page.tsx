@@ -1,7 +1,9 @@
 import PageTemplate, { generateMetadata } from './[slug]/page'
 
-type PageProps = {
-  params?: { [key: string]: string | string[] }
+type Args = {
+  params: {
+    slug?: string
+  }
   searchParams?: { [key: string]: string | string[] }
 }
 
@@ -9,7 +11,7 @@ type PageProps = {
 export const revalidate = 3600
 
 // Create a wrapper component to handle the home page case
-export default async function HomePage(props: PageProps) {
+export default async function HomePage(props: Args) {
   return PageTemplate({
     ...props,
     params: {
