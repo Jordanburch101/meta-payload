@@ -67,6 +67,6 @@ This template includes a pre-configured setup with:
 - [ ] Performance optimization
 - [ ] Security hardening
 - [ ] Documentation
-- [ ] Sentry
+- [x] Sentry
 - [x] Speed Insights
-- [ ] PostHog Analytics
+- [x] PostHog Analytics
