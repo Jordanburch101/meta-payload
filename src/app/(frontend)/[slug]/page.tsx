@@ -55,8 +55,8 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
   return result.docs?.[0] || null
 })
 
-export async function generateMetadata({ params: paramsPromise }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug = 'home' } = await paramsPromise
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const { slug = 'home' } = params
   const page = await queryPageBySlug({
     slug,
   })
@@ -65,13 +65,13 @@ export async function generateMetadata({ params: paramsPromise }: { params: { sl
 }
 
 type Args = {
-  params: Promise<{
+  params: {
     slug?: string
-  }>
+  }
 }
 
-export default async function Page({ params: paramsPromise }: Args) {
-  const { slug = 'home' } = await paramsPromise
+export default async function Page({ params }: Args) {
+  const { slug = 'home' } = params
   const url = '/' + slug
   const { isEnabled: isDraft } = await draftMode()
   let page: PageType | null
@@ -79,7 +79,6 @@ export default async function Page({ params: paramsPromise }: Args) {
   page = await queryPageBySlug({
     slug,
   })
-
 
   if (!page) {
     // return <PayloadRedirects url={url} />
