@@ -3,6 +3,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CSPostHogProvider } from '@/app/_analytics/providers'
 import HeaderServer from '@/blocks/global/Header/Server'
 import FooterServer from '@/blocks/global/Footer/Server'
+import { LivePreviewListener } from '@/components/LivePreviewListener';
+import { draftMode } from 'next/headers';
 
 // Add metadata export
 export const metadata = {
@@ -11,15 +13,14 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({
-    children,
-  }: {
-    children: React.ReactNode
-  }) {
+export default async function RootLayout({children,}: {children: React.ReactNode}) {
+  const { isEnabled } = await draftMode()
+
     return (
       <CSPostHogProvider>
       <html lang="en">
           <body className="flex flex-col h-screen justify-between dark">
+            <LivePreviewListener />
             <HeaderServer />
             {/* Layout UI */}
             <main className="mb-auto">{children}</main>

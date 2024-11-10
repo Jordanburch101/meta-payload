@@ -4,18 +4,45 @@ import { Image } from "@/blocks/image/schema";
 import { HeroHighlight } from "@/blocks/heroHighlight/schema";
 import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
-import { revalidateNextCache } from "@/hooks/revalidateNextCache";
+import { revalidatePage } from './hooks/revalidatePage'
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
 import { slugField } from "@/fields/slug";
 import { FormBlock } from "@/blocks/form/schema";
+import { authenticated } from "@/access/authenticated";
+import { authenticatedOrPublished } from "@/access/authenticatedOrPublished";
+import { populatePublishedAt } from "@/hooks/populatePublishedAt";
+import { generatePreviewPath } from '@/utils/generatePreviewPath'
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
+    access: {
+        create: authenticated,
+        delete: authenticated,
+        read: authenticatedOrPublished,
+        update: authenticated,
+      },
     admin: {
+        livePreview: {
+            url: ({ data }) => {
+              const path = generatePreviewPath({
+                slug: typeof data?.slug === 'string' ? data.slug : '',
+                collection: 'pages',
+              })
+      
+              return `${process.env.NEXT_PUBLIC_SERVER_URL}${path}`
+            },
+          },
+          preview: (data) => {
+            const path = generatePreviewPath({
+              slug: typeof data?.slug === 'string' ? data.slug : '',
+              collection: 'pages',
+            })
+      
+            return `${process.env.NEXT_PUBLIC_SERVER_URL}${path}`
+          },
         useAsTitle: 'title',
         defaultColumns: ['title', 'slug', 'updatedAt'],
-        
     },
     fields: [
         {
@@ -103,6 +130,7 @@ export const Pages: CollectionConfig = {
     maxPerDoc: 50,
     },
     hooks: {
-        afterChange: [revalidateNextCache],
+        afterChange: [revalidatePage],  
+        beforeChange: [populatePublishedAt],
     },
 }
