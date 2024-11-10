@@ -56,16 +56,16 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 })
 
 type Args = {
-  params: {
+  params: Promise<{
     slug?: string
-  }
-  searchParams?: { [key: string]: string | string[] | undefined }
+  }>
 }
 
-export default async function Page({ params }: Args) {
-  const { slug = 'home' } = params
+export default async function Page({ params: paramsPromise }: Args) {
+  const { slug = 'home' } = await paramsPromise
   
   let page: PageType | null
+
   page = await queryPageBySlug({
     slug,
   })
@@ -81,13 +81,11 @@ export default async function Page({ params }: Args) {
   )
 }
 
-export async function generateMetadata({ params }: Args): Promise<Metadata> {
-  const { slug = 'home' } = params
+export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
+  const { slug = 'home' } = await paramsPromise
   const page = await queryPageBySlug({
     slug,
   })
 
   return generateMeta({ doc: page })
 }
-
-
