@@ -24,12 +24,15 @@ export async function generateStaticParams() {
     overrideAccess: false,
   })
 
-  // Ensure we're returning an array of objects with string values
-  return (pages.docs || [])
-    .filter((doc) => doc.slug !== 'home')
-    .map((doc) => ({
-      slug: String(doc.slug), // Ensure slug is a string
-    }))
+  const params = pages.docs
+    ?.filter((doc) => {
+      return doc.slug !== 'home'
+    })
+    .map(({ slug }) => {
+      return { slug }
+    })
+
+  return params
 }
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
