@@ -53,8 +53,8 @@ This template includes a pre-configured setup with:
   - [x] Transactional emails
   - [x] Email builder interface
 - [ ] Live Preview
-  - [ ] Real-time content preview
-  - [ ] Multi-device preview
+  - [x] Real-time content preview
+  - [x] Multi-device preview
   - [x] Versioning
   - [x] Draft management
   - [x] Autosave
