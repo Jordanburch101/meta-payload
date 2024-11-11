@@ -50,4 +50,26 @@ disableLogger: true,
 // https://docs.sentry.io/product/crons/
 // https://vercel.com/docs/cron-jobs
 automaticVercelMonitors: true,
+
+// Add these configurations:
+ignoreErrors: [
+  // Add any error patterns you want to ignore
+  'ResizeObserver loop',
+  'network error',
+],
+
+// Disable Sentry during 404 responses
+ignoreTransactions: [
+  // Ignore transactions for 404 pages
+  (ctx) => ctx.request?.url?.includes('404') || false,
+],
+
+// Set a lower sample rate for monitoring
+tracesSampleRate: 0.1,
+
+// Disable automatic instrumentation for certain features
+automaticVercelMonitors: false,
+
+// Ensure this is false in production
+debug: false,
 });
