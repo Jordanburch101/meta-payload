@@ -10,7 +10,6 @@ import { RenderBlocks } from '@/utils/RenderBlocks'
 import { generateMeta } from '@/utils/generateMeta'
 import { draftMode } from 'next/headers'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
-import { notFound } from 'next/navigation'
 
 // Enable caching with revalidation every hour
 export const revalidate = 3600
@@ -62,35 +61,26 @@ type Args = {
 }
 
 export default async function Page({ params: paramsPromise }: Args) {
-  try {
-    const { slug = 'home' } = await paramsPromise
-    const url = '/' + slug
-    
-    let page: PageType | null = null
+  const { slug = 'home' } = await paramsPromise
+  const url = '/' + slug
+  
+  let page: PageType | null
 
-    try {
-      page = await queryPageBySlug({
-        slug,
-      })
-    } catch (err) {
-      console.error('Error fetching page:', err)
-      notFound()
-    }
+  page = await queryPageBySlug({
+    slug,
+  })
 
-    if (!page) {
-      notFound()
-    }
-
-    return (
-      <Fragment>
-        <PayloadRedirects disableNotFound url={url} />
-        <RenderBlocks blocks={page.layout?.layout || []} />
-      </Fragment>
-    )
-  } catch (err) {
-    console.error('Page render error:', err)
-    notFound()
+  if (!page) {
+    return <PayloadRedirects url={url} />
   }
+
+  return (
+    <Fragment>
+      {/* Allows redirects for valid pages too */}
+      <PayloadRedirects disableNotFound url={url} />
+      <RenderBlocks blocks={page.layout?.layout || []} />
+    </Fragment>
+  )
 }
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
