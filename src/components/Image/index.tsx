@@ -20,7 +20,7 @@ export const Image: React.FC<ImageProps> = ({ image, alt, width, height, classNa
   if (!image?.url) return null
 
   return (
-    <img 
+    <img
       src={image.url}
       alt={alt || image.alt || ''}
       width={width || image.width || undefined}

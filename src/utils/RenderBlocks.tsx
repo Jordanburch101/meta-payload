@@ -6,6 +6,7 @@ import RichTextBlockServer from '@/blocks/richText/Server'
 import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
 import {FormBlockClient} from '@/blocks/form/Client'
+
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
     'spotlight': SpotlightServer,

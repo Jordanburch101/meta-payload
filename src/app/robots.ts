@@ -12,12 +12,7 @@ import type { MetadataRoute } from 'next'
  * To make your site public:
  * - Use the "public" configuration
  * - Ensure NEXT_PUBLIC_SERVER_URL environment variable is set
- * - Create and maintain a sitemap.xml file
- * - Submit your sitemap to search engine consoles:
- *   - Google Search Console (https://search.google.com/search-console)
- *   - Bing Webmaster Tools (https://www.bing.com/webmasters)
- *   - Others as needed
- * 
+
  * @returns {MetadataRoute.Robots} Robots configuration object
  */
 export default function robots(): MetadataRoute.Robots {

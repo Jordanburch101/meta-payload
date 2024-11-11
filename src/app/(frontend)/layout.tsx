@@ -1,6 +1,6 @@
 import './global.css'
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { CSPostHogProvider } from '@/app/_analytics/providers'
+import { CSPostHogProvider } from '@/utils/analytics/providers'
 import HeaderServer from '@/blocks/global/Header/Server'
 import FooterServer from '@/blocks/global/Footer/Server'
 import { LivePreviewListener } from '@/components/LivePreviewListener';
@@ -14,7 +14,7 @@ export const metadata = {
 }
 
 export default async function RootLayout({children,}: {children: React.ReactNode}) {
-  const { isEnabled } = await draftMode()
+  // const { isEnabled } = await draftMode()
 
     return (
       <CSPostHogProvider>

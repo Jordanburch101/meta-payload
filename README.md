@@ -52,7 +52,7 @@ This template includes a pre-configured setup with:
   - [x] Email Form Selector
   - [x] Transactional emails
   - [x] Email builder interface
-- [ ] Live Preview
+- [x] Live Preview
   - [x] Real-time content preview
   - [x] Multi-device preview
   - [x] Versioning
