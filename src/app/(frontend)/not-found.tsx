@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
  
 export default function NotFound() {
@@ -9,6 +11,7 @@ export default function NotFound() {
         <Link 
           href="/" 
           className="inline-block px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          replace
         >
           Return Home
         </Link>
