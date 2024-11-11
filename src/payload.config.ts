@@ -10,6 +10,8 @@ import { FixedToolbarFeature } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
+import { sentryPlugin } from '@payloadcms/plugin-sentry'
+import * as Sentry from '@sentry/nextjs'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users/Users'
@@ -169,6 +171,22 @@ export default buildConfig({
           })
         },
       },
+    }),
+    // sentry plugin
+    sentryPlugin({
+      options: {
+        captureErrors: [400, 403, 404],
+        context: ({ defaultContext, req }) => {
+          return {
+            ...defaultContext,
+            tags: {
+              locale: req.locale,
+            },
+          }
+        },
+        debug: true,
+      },
+      Sentry,
     }),
   ],
 })
