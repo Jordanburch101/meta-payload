@@ -37,7 +37,12 @@ This template includes a pre-configured setup with:
   - [x] SEO fields
   - [x] Robots.txt (with documentation)
   - [x] Slug management
-
+- [x] Posts
+  - [x] Categories
+  - [x] Archive page
+  - [x] Single post page
+  - [x] Pagination
+  - [x] Related posts
 ### Features
 - [x] Blocks
   - [x] Content blocks system

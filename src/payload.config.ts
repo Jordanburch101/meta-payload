@@ -22,6 +22,8 @@ import { Footer } from './globals/Footer'
 
 import { Page } from './payload-types'
 import { revalidateRedirects } from './hooks/revalidateRedirects'
+import { Posts } from './collections/Posts'
+import Categories from './collections/Categories'
 
 const generateTitle: GenerateTitle<Page> = ({ doc }) => {
   return doc?.title ? `${doc.title} | Payload Website Template` : 'Payload Website Template'
@@ -67,6 +69,8 @@ export default buildConfig({
   },
   collections: [
     Pages,
+    Posts,
+    Categories, 
     Users,
     Media,
   ],
