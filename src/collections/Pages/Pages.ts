@@ -129,6 +129,9 @@ export const Pages: CollectionConfig = {
     },
     maxPerDoc: 50,
     },
+    lockDocuments: {
+      duration: 600, // Duration in seconds
+    },
     hooks: {
         afterChange: [revalidatePage],  
         beforeChange: [populatePublishedAt],

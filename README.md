@@ -58,10 +58,10 @@ This template includes a pre-configured setup with:
   - [x] Versioning
   - [x] Draft management
   - [x] Autosave
-- [ ] Redirects
-  - [ ] 301/302 redirects
-  - [ ] Redirect management interface
-  - [ ] Redirect tracking
+  - [x] Document locking
+- [x] Redirects
+  - [x] Redirect management interface
+  - [x] Redirect tracking
 
 ### Additional Features
 - [ ] Search functionality
