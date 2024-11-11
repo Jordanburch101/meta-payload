@@ -5,6 +5,7 @@ import { resendAdapter } from '@payloadcms/email-resend'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
+import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { FixedToolbarFeature } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -20,6 +21,7 @@ import { Header } from './globals/Header'
 import { Footer } from './globals/Footer'
 
 import { Page } from './payload-types'
+import { revalidateRedirects } from './hooks/revalidateRedirects'
 
 const generateTitle: GenerateTitle<Page> = ({ doc }) => {
   return doc?.title ? `${doc.title} | Payload Website Template` : 'Payload Website Template'
@@ -89,6 +91,29 @@ export default buildConfig({
     apiKey: process.env.RESEND_API_KEY || '',
   }),
   plugins: [
+    // redirects plugin
+    redirectsPlugin({
+      collections: ['pages'],
+      overrides: {
+        // @ts-expect-error
+        fields: ({ defaultFields }) => {
+          return defaultFields.map((field) => {
+            if ('name' in field && field.name === 'from') {
+              return {
+                ...field,
+                admin: {
+                  description: 'You will need to rebuild the website when changing this field.',
+                },
+              }
+            }
+            return field
+          })
+        },
+        hooks: {
+          afterChange: [revalidateRedirects],
+        },
+      },
+    }),
     // storage-adapter-placeholder
     s3Storage({
       collections: {

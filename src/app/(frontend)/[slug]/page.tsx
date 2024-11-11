@@ -1,16 +1,15 @@
 import type { Metadata } from 'next'
 
-import config from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import configPromise from '@payload-config'
 import React, { cache } from 'react'
 
 import type { Page as PageType } from '../../../payload-types'
 
-import { notFound } from 'next/navigation'
 import { RenderBlocks } from '@/utils/RenderBlocks'
 import { generateMeta } from '@/utils/generateMeta'
 import { draftMode } from 'next/headers'
+import { PayloadRedirects } from '@/components/PayloadRedirects'
 
 // Enable caching with revalidation every hour
 export const revalidate = 3600
@@ -63,6 +62,7 @@ type Args = {
 
 export default async function Page({ params: paramsPromise }: Args) {
   const { slug = 'home' } = await paramsPromise
+  const url = '/' + slug
   
   let page: PageType | null
 
@@ -71,11 +71,13 @@ export default async function Page({ params: paramsPromise }: Args) {
   })
 
   if (!page) {
-    notFound()
+    return <PayloadRedirects url={url} />
   }
 
   return (
     <article className="pt-16 pb-24">
+      {/* Allows redirects for valid pages too */}
+      <PayloadRedirects disableNotFound url={url} />
       <RenderBlocks blocks={page.layout?.layout || []} />
     </article>
   )

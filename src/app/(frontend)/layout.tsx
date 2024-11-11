@@ -18,7 +18,7 @@ export default async function RootLayout({children,}: {children: React.ReactNode
 
     return (
       <CSPostHogProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
           <body className="flex flex-col h-screen justify-between dark">
             <LivePreviewListener />
             <HeaderServer />
