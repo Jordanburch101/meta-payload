@@ -1,10 +1,11 @@
 import './global.css'
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CSPostHogProvider } from '@/utils/analytics/providers'
-import HeaderServer from '@/blocks/global/Header/Server'
-import FooterServer from '@/blocks/global/Footer/Server'
+import Header from '@/blocks/global/Header/Server'
+import Footer from '@/blocks/global/Footer/Server'
 import { LivePreviewListener } from '@/components/LivePreviewListener';
 import { draftMode } from 'next/headers';
+import { CurrentPageAdmin } from '@/components/AdminBar/CurrentPageAdmin'
 
 // Add metadata export
 export const metadata = {
@@ -13,21 +14,30 @@ export const metadata = {
   },
 }
 
-export default async function RootLayout({children,}: {children: React.ReactNode}) {
-  // const { isEnabled } = await draftMode()
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { isEnabled } = await draftMode()
 
-    return (
-      <CSPostHogProvider>
+  return (
+    <CSPostHogProvider>
       <html lang="en" suppressHydrationWarning>
-          <body className="flex flex-col h-screen justify-between dark">
-            <LivePreviewListener />
-            <HeaderServer />
-            {/* Layout UI */}
-            <main className="mb-auto">{children}</main>
-            <SpeedInsights />
-            <FooterServer />
-          </body>
-        </html>
-      </CSPostHogProvider>
-    )
-  }
+        <body className="flex flex-col h-screen justify-between dark">
+          <CurrentPageAdmin
+            adminBarProps={{
+              preview: isEnabled,
+            }}
+          />
+          <LivePreviewListener />
+          <Header />
+          {/* Layout UI */}
+          <main className="mb-auto">{children}</main>
+          <SpeedInsights />
+          <Footer />
+        </body>
+      </html>
+    </CSPostHogProvider>
+  )
+}

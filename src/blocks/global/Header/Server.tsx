@@ -17,7 +17,7 @@ type HeaderType = {
   }>
 }
 
-export default async function HeaderServer() {
+export default async function Header() {
     const payload = await getPayloadHMR({config})
     // Add type assertion here
     const header = await payload.findGlobal({

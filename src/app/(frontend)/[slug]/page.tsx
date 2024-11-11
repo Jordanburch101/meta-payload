@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import configPromise from '@payload-config'
-import React, { cache } from 'react'
+import React, { cache, Fragment } from 'react'
 
 import type { Page as PageType } from '../../../payload-types'
 
@@ -75,11 +75,11 @@ export default async function Page({ params: paramsPromise }: Args) {
   }
 
   return (
-    <article className="pt-16 pb-24">
+    <Fragment>
       {/* Allows redirects for valid pages too */}
       <PayloadRedirects disableNotFound url={url} />
       <RenderBlocks blocks={page.layout?.layout || []} />
-    </article>
+    </Fragment>
   )
 }
 

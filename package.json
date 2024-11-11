@@ -42,6 +42,7 @@
     "mini-svg-data-uri": "^1.4.4",
     "next": "15.0.0",
     "payload": "beta",
+    "payload-admin-bar": "^1.0.6",
     "posthog-js": "^1.181.0",
     "react": "19.0.0-rc-65a56d0e-20241020",
     "react-dom": "19.0.0-rc-65a56d0e-20241020",

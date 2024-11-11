@@ -18,7 +18,7 @@ type FooterType = {
     copyright: string
 }
 
-export default async function FooterServer() {
+export default async function Footer() {
     const payload = await getPayloadHMR({config})
     const footer = await payload.findGlobal({
         slug: 'footer',
