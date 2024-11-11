@@ -74,7 +74,7 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
   return (
     <NextImage
       alt={alt || ''}
-      className={cn(imgClassName)}
+      className={cn(imgClassName, 'w-full object-cover')}
       fill={fill}
       height={!fill ? height : undefined}
       onClick={onClick}
@@ -88,6 +88,8 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
       quality={90}
       sizes={sizes}
       src={src}
+      placeholder="blur"
+      blurDataURL={typeof src === 'string' ? src : undefined}
       width={!fill ? width : undefined}
     />
   )
