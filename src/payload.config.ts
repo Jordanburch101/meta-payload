@@ -19,8 +19,8 @@ import { Media } from './collections/Media/Media'
 import { Pages } from './collections/Pages/Pages'
 
 import { s3Storage } from '@payloadcms/storage-s3'
-import { Header } from './globals/Header'
-import { Footer } from './globals/Footer'
+import { Header } from './globals/Header/schema'
+import { Footer } from './globals/Footer/schema'
 
 import { Page } from './payload-types'
 import { revalidateRedirects } from './hooks/revalidateRedirects'

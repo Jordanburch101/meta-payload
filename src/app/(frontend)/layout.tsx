@@ -1,8 +1,8 @@
 import './global.css'
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CSPostHogProvider } from '@/utils/analytics/providers'
-import Header from '@/blocks/global/Header/Server'
-import Footer from '@/blocks/global/Footer/Server'
+import Header from '@/globals/Header/Server'
+import Footer from '@/globals/Footer/Server'
 import { LivePreviewListener } from '@/components/LivePreviewListener';
 import { draftMode } from 'next/headers';
 import { CurrentPageAdmin } from '@/components/AdminBar/CurrentPageAdmin'
