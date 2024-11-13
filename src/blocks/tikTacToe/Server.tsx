@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import TikTacToeClient from "./Client"
+import { Suspense } from "react"
 
 export default function TikTacToeServer({title}: {title: string}) {  
     return (
@@ -10,7 +11,9 @@ export default function TikTacToeServer({title}: {title: string}) {
                     <CardTitle className="text-2xl font-bold text-center">Tic Tac Toe</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <TikTacToeClient />
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <TikTacToeClient />
+                    </Suspense>
                 </CardContent>
             </Card>
         </div>
