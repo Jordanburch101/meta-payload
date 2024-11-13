@@ -1,7 +1,12 @@
+'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import TikTacToeClient from "./Client"
-import { Suspense } from "react"
+import dynamic from 'next/dynamic'
+
+const TikTacToeClient = dynamic(() => import('./Client'), {
+  ssr: false,
+  loading: () => <div>Loading...</div>
+})
 
 export default function TikTacToeServer({title}: {title: string}) {  
     return (
@@ -11,9 +16,7 @@ export default function TikTacToeServer({title}: {title: string}) {
                     <CardTitle className="text-2xl font-bold text-center">Tic Tac Toe</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Suspense fallback={<div>Loading...</div>}>
-                        <TikTacToeClient />
-                    </Suspense>
+                    <TikTacToeClient />
                 </CardContent>
             </Card>
         </div>

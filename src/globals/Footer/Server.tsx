@@ -40,7 +40,7 @@ export default async function Footer() {
             <div className="flex items-center w-full h-32 gap-11 justify-between">
                 <div className="w-64 h-32 flex flex-col items-center justify-center">
                     <Link href="/">
-                        <Image src={footer.logo.url} alt={footer.logo.alt} width={footer.logo.width} height={footer.logo.height} className="object-contain max-w-[190px] md:max-w-none" />
+                        <Image src={footer.logo.url} alt={footer.logo.alt} width={footer.logo.width} height={footer.logo.height} className="object-contain max-w-[190px] md:max-w-initial" />
                     </Link>
                 </div>
                 <nav className="hidden md:flex items-center gap-4">

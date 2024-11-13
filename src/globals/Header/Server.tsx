@@ -62,7 +62,7 @@ export default async function Header() {
             <div className="flex items-center container mx-auto justify-between w-full gap-11">
                 <div className="w-64 py-6 md:py-10 flex items-center md:justify-center">
                     <CMSLink type="custom" url="/">
-                        <Image src={header.logo.url} alt={header.logo.alt} width={header.logo.width} height={header.logo.height} className="object-contain max-w-[190px] md:max-w-none" />
+                        <Image src={header.logo.url} alt={header.logo.alt} width={header.logo.width} height={header.logo.height} className="object-contain max-w-[190px] md:max-w-initial" />
                     </CMSLink>
                 </div>
                 
