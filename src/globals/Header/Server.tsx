@@ -44,7 +44,7 @@ export default async function Header() {
         slug: 'header',
     }) as HeaderType
     return (
-        <section className="bg-slate-900 px-4">
+        <section className="bg-black container mx-auto px-4">
             <div className="flex items-center w-full h-32 gap-11">
                 <div className="w-64 h-32 flex items-center justify-center">
                     <CMSLink type="custom" url="/">

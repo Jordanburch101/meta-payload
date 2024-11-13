@@ -7,6 +7,7 @@ import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
 import {FormBlockClient} from '@/blocks/form/Client'
 import TikTacToeServer from '../tikTacToe/Server'
+import InfiniteMovingCardsServer from '../infiniteMovingCards/Server'
 
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
@@ -16,6 +17,7 @@ const blockComponents = {
     'rich-text': RichTextBlockServer,
     'formBlock': FormBlockClient,
     'tik-tac-toe': TikTacToeServer,
+    'infinite-moving-cards': InfiniteMovingCardsServer,
 }
 
 export const RenderBlocks: React.FC<{

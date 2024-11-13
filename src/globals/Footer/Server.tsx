@@ -36,13 +36,10 @@ export default async function Footer() {
         slug: 'footer',
     }) as FooterType
     return (
-        <section className="bg-slate-900 mt-auto px-4">
-            <div className="flex items-center w-full h-32 gap-11">
+        <section className="bg-black container mx-auto mt-auto px-4">
+            <div className="flex items-center w-full h-32 gap-11 justify-between">
                 <div className="w-64 h-32 flex flex-col items-center justify-center">
                     <Image src={footer.logo.url} alt={footer.logo.alt} width={footer.logo.width} height={footer.logo.height} className="object-contain" />
-                    <div className="text-white">
-                        {footer.copyright}
-                    </div>
                 </div>
                 <nav className="flex items-center gap-4">
                     {footer.links.map((link) => (
@@ -69,6 +66,9 @@ export default async function Footer() {
                         </div>
                     ))}
                 </nav>
+                <div className="text-white">
+                    {footer.copyright}
+                </div>
             </div>
         </section>
     )

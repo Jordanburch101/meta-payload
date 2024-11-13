@@ -15,6 +15,7 @@ import { authenticated } from "@/access/authenticated";
 import { authenticatedOrPublished } from "@/access/authenticatedOrPublished";
 import { populatePublishedAt } from "@/hooks/populatePublishedAt";
 import { generatePreviewPath } from '@/utils/generatePreviewPath'
+import { InfiniteMovingCards } from "@/blocks/infiniteMovingCards/schema";
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -90,6 +91,7 @@ export const Pages: CollectionConfig = {
                             Spotlight,
                             FormBlock,
                             TikTacToe,
+                            InfiniteMovingCards,
                         ]
                     }]
                 },

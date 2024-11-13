@@ -26,7 +26,7 @@ export default async function RootLayout({
   return (
     <CSPostHogProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className="flex flex-col h-screen justify-between dark">
+        <body className="flex flex-col h-screen justify-between dark bg-black">
           <CurrentPageAdmin
             adminBarProps={{
               preview: isEnabled,

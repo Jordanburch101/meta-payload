@@ -139,6 +139,19 @@ export interface Page {
           blockName?: string | null;
           blockType: 'tik-tac-toe';
         }
+      | {
+          cards?:
+            | {
+                quote: string;
+                name: string;
+                title: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'infinite-moving-cards';
+        }
     )[];
   };
   meta?: {
@@ -612,6 +625,20 @@ export interface PagesSelect<T extends boolean = true> {
               'tik-tac-toe'?:
                 | T
                 | {
+                    id?: T;
+                    blockName?: T;
+                  };
+              'infinite-moving-cards'?:
+                | T
+                | {
+                    cards?:
+                      | T
+                      | {
+                          quote?: T;
+                          name?: T;
+                          title?: T;
+                          id?: T;
+                        };
                     id?: T;
                     blockName?: T;
                   };
