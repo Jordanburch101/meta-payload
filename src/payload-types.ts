@@ -165,6 +165,12 @@ export interface Page {
           blockName?: string | null;
           blockType: 'text-effect';
         }
+      | {
+          title?: string | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'confetti-header';
+        }
     )[];
   };
   meta?: {
@@ -667,6 +673,13 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     text?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              'confetti-header'?:
+                | T
+                | {
+                    title?: T;
                     id?: T;
                     blockName?: T;
                   };

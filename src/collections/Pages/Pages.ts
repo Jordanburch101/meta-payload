@@ -6,6 +6,7 @@ import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
 import { TikTacToe } from "@/blocks/tikTacToe/schema";
 import { TextEffect } from "@/blocks/textEffect/schema";
+import { ConfettiHeader } from "@/blocks/confettiHeader/schema";
 
 import { revalidatePage } from './hooks/revalidatePage'
 
@@ -96,6 +97,7 @@ export const Pages: CollectionConfig = {
                             InfiniteMovingCards,
                             GithubGlobe,
                             TextEffect,
+                            ConfettiHeader,
                         ]
                     }]
                 },

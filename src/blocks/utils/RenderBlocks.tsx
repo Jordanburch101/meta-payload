@@ -10,7 +10,7 @@ import TikTacToeServer from '../tikTacToe/Server'
 import InfiniteMovingCardsServer from '../infiniteMovingCards/Server'
 import GithubGlobeServer from '../githubGlobe/Server'
 import TextEffectServer from '../textEffect/Server'
-
+import ConfettiHeaderBlockServer from '../confettiHeader/Server'
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
     'spotlight': SpotlightServer,
@@ -22,6 +22,7 @@ const blockComponents = {
     'infinite-moving-cards': InfiniteMovingCardsServer,
     'github-globe': GithubGlobeServer,
     'text-effect': TextEffectServer,
+    'confetti-header': ConfettiHeaderBlockServer,
 }
 
 export const RenderBlocks: React.FC<{

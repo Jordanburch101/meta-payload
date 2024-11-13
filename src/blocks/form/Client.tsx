@@ -2,7 +2,7 @@
 import type { Form as FormType } from '@payloadcms/plugin-form-builder/types'
 
 import { useRouter } from 'next/navigation'
-import React, { useCallback, useState } from 'react'
+import React, { Fragment, useCallback, useState } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import RichText from '@/components/RichText'
 import { Button } from '@/components/ui/button'
@@ -133,18 +133,23 @@ export const FormBlockClient: React.FC<
         {!isLoading && hasSubmitted && confirmationType === 'message' && (
           <RichText content={confirmationMessage} />
         )}
-        {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
+        {isLoading && !hasSubmitted && (
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+            <p>Loading, please wait...</p>
+          </div>
+        )}
         {error && <div>{`${error.status || '500'}: ${error.message || ''}`}</div>}
         {!hasSubmitted && (
           <form id={formID} onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-4 last:mb-0">
+            <div className="mb-4 last:mb-0 flex flex-wrap gap-6">
               {formFromProps &&
                 formFromProps.fields &&
                 formFromProps.fields?.map((field, index) => {
                   const Field: React.FC<any> = fields[field.blockType as keyof typeof fields]
                   if (Field) {
                     return (
-                      <div className="mb-6 last:mb-0" key={index}>
+                      <Fragment key={index}>
                         <Field
                           form={formFromProps}
                           {...field}
@@ -153,7 +158,7 @@ export const FormBlockClient: React.FC<
                           errors={errors}
                           register={register}
                         />
-                      </div>
+                      </Fragment>
                     )
                   }
                   return null
