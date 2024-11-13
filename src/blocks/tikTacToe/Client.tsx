@@ -1,19 +1,26 @@
+// Client.tsx
 'use client'
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import confetti from 'canvas-confetti'
+import { useConfetti } from './Confetti'
 
 type Player = 'X' | 'O' | null
 
 export default function TicTacToe() {
-  const [board, setBoard] = useState<Player[]>(Array(9).fill(null))
-  const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
-  const [winner, setWinner] = useState<Player>(null)
-  const [winningLine, setWinningLine] = useState<number[] | null>(null)
+ const [isLoaded, setIsLoaded] = useState(false)
+ const [board, setBoard] = useState<Player[]>(Array(9).fill(null))
+ const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
+ const [winner, setWinner] = useState<Player>(null)
+ const [winningLine, setWinningLine] = useState<number[] | null>(null)
+ const { trigger: triggerWinAnimation } = useConfetti()
+
+ useEffect(() => {
+   setIsLoaded(true)
+ }, [])
 
   const checkWinner = (squares: Player[]): [Player, number[] | null] => {
     const lines = [
@@ -60,72 +67,6 @@ export default function TicTacToe() {
     setWinner(null)
     setWinningLine(null)
   }
-
-  const triggerWinAnimation = useCallback(() => {
-    // Initial burst of confetti
-    const count = 200
-    const defaults = {
-      origin: { y: 0.7 }
-    }
-
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio)
-      })
-    }
-
-    fire(0.25, {
-      spread: 26,
-      startVelocity: 55,
-    })
-
-    fire(0.2, {
-      spread: 60,
-    })
-
-    fire(0.35, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 0.8
-    })
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 25,
-      decay: 0.92,
-      scalar: 1.2
-    })
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 45,
-    })
-
-    // Slower, sustained shower of confetti
-    setTimeout(() => {
-      const slowConfettiInterval = setInterval(() => {
-        confetti({
-          particleCount: 2,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#ff0000', '#00ff00', '#0000ff']
-        })
-        confetti({
-          particleCount: 2,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#ff0000', '#00ff00', '#0000ff']
-        })
-      }, 150)
-
-      // Stop the slower confetti after 3 seconds
-      setTimeout(() => clearInterval(slowConfettiInterval), 3000)
-    }, 1000)
-  }, [])
 
   const getGradientPosition = (index: number) => {
     if (!winningLine) return ''

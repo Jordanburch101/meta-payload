@@ -20,6 +20,7 @@ export default async function Page() {
     overrideAccess: false,
   })
 
+
   return (
     <div className="pt-24 pb-24">
 
@@ -41,7 +42,8 @@ export default async function Page() {
       <FocusCards
         cards={posts.docs.map((post) => ({
           title: post.title,
-          src: post.meta?.image?.toString() || '/default-image.jpg',
+          // @ts-ignore
+          src: post.meta?.image?.url || '/https://vfmxvvugriytncpzypvm.supabase.co/storage/v1/object/public/meta-payload-main-bucket/block-thumbnails/image-block.png',
           href: `/posts/${post.slug}`,
         }))}
       />
