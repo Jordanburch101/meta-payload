@@ -1,11 +1,11 @@
 import type { Metadata } from 'next/types'
 
-import { CollectionArchive } from '@/components/CollectionArchive'
 import { PageRange } from '@/components/PageRange'
 import { Pagination } from '@/components/Pagination'
 import configPromise from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import React from 'react'
+import { FocusCards } from '@/components/ui/focus-cards'
 
 export const dynamic = 'force-static'
 export const revalidate = 600
@@ -38,7 +38,13 @@ export default async function Page() {
         />
       </div>
 
-      <CollectionArchive posts={posts.docs} />
+      <FocusCards
+        cards={posts.docs.map((post) => ({
+          title: post.title,
+          src: post.meta?.image?.toString() || '/default-image.jpg',
+          href: `/posts/${post.slug}`,
+        }))}
+      />
 
       <div className="container">
         {posts.totalPages > 1 && posts.page && (

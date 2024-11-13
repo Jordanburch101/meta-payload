@@ -1,14 +1,11 @@
 'use client'
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import dynamic from 'next/dynamic'
-import type confetti from 'canvas-confetti'
-
-const confettiFunc = dynamic(() => import('canvas-confetti').then(mod => mod.default), {
-  ssr: false
-}) as typeof confetti
+import confetti from 'canvas-confetti'
 
 type Player = 'X' | 'O' | null
 
@@ -65,13 +62,14 @@ export default function TicTacToe() {
   }
 
   const triggerWinAnimation = useCallback(() => {
+    // Initial burst of confetti
     const count = 200
     const defaults = {
       origin: { y: 0.7 }
     }
 
-    function fire(particleRatio: number, opts: Parameters<typeof confetti>[0]) {
-      confettiFunc({
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
         ...defaults,
         ...opts,
         particleCount: Math.floor(count * particleRatio)
@@ -105,16 +103,17 @@ export default function TicTacToe() {
       startVelocity: 45,
     })
 
+    // Slower, sustained shower of confetti
     setTimeout(() => {
       const slowConfettiInterval = setInterval(() => {
-        confettiFunc({
+        confetti({
           particleCount: 2,
           angle: 60,
           spread: 55,
           origin: { x: 0 },
           colors: ['#ff0000', '#00ff00', '#0000ff']
         })
-        confettiFunc({
+        confetti({
           particleCount: 2,
           angle: 120,
           spread: 55,
@@ -123,6 +122,7 @@ export default function TicTacToe() {
         })
       }, 150)
 
+      // Stop the slower confetti after 3 seconds
       setTimeout(() => clearInterval(slowConfettiInterval), 3000)
     }, 1000)
   }, [])
