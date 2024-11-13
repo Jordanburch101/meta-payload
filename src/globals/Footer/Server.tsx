@@ -43,7 +43,7 @@ export default async function Footer() {
                         <Image src={footer.logo.url} alt={footer.logo.alt} width={footer.logo.width} height={footer.logo.height} className="object-contain" />
                     </Link>
                 </div>
-                <nav className="flex items-center gap-4">
+                <nav className="hidden md:flex items-center gap-4">
                     {footer.links.map((link) => (
                         <div key={link.id} className="relative group">
                             <CMSLink 
@@ -68,7 +68,7 @@ export default async function Footer() {
                         </div>
                     ))}
                 </nav>
-                <div className="text-white">
+                <div className="text-white text-sm md:text-base">
                     {footer.copyright}
                 </div>
             </div>
