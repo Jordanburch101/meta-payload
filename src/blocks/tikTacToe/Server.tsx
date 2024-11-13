@@ -1,6 +1,13 @@
 // Server.tsx
+import { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import TicTacToeClient from './Client'
+import dynamic from 'next/dynamic'
+
+// Dynamically import the client component with SSR disabled
+const TicTacToeClient = dynamic(() => import('./Client'), { 
+  ssr: false,
+  loading: () => <div>Loading game...</div>
+})
 
 export default function TicTacToeServer() {  
     return (
@@ -10,7 +17,9 @@ export default function TicTacToeServer() {
                     <CardTitle className="text-2xl font-bold text-center">Tic Tac Toe</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <TicTacToeClient />
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <TicTacToeClient />
+                    </Suspense>
                 </CardContent>
             </Card>
         </div>

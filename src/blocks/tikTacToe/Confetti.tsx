@@ -1,15 +1,18 @@
 // components/Confetti.tsx
 'use client'
 
-import { useCallback } from 'react'
-
-let confetti: any = null
-
-if (typeof window !== 'undefined') {
-  confetti = require('canvas-confetti').default
-}
+import { useCallback, useEffect, useState } from 'react'
 
 export function useConfetti() {
+  const [confetti, setConfetti] = useState<any>(null)
+
+  useEffect(() => {
+    // Initialize confetti only on client side
+    import('canvas-confetti').then((module) => {
+      setConfetti(module.default)
+    })
+  }, [])
+
   const trigger = useCallback(() => {
     if (!confetti) return
 
@@ -75,7 +78,7 @@ export function useConfetti() {
       // Stop the slower confetti after 3 seconds
       setTimeout(() => clearInterval(slowConfettiInterval), 3000)
     }, 1000)
-  }, [])
+  }, [confetti])
 
   return { trigger }
 }
