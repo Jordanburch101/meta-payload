@@ -6,6 +6,7 @@ import RichTextBlockServer from '@/blocks/richText/Server'
 import HeroHighlightServer from '@/blocks/heroHighlight/Server'
 import SpotlightServer from '@/blocks/spotlight/Server'
 import {FormBlockClient} from '@/blocks/form/Client'
+import TikTacToeServer from '../tikTacToe/Server'
 
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
@@ -14,6 +15,7 @@ const blockComponents = {
     'image': ImageBlockServer,
     'rich-text': RichTextBlockServer,
     'formBlock': FormBlockClient,
+    'tik-tac-toe': TikTacToeServer,
 }
 
 export const RenderBlocks: React.FC<{

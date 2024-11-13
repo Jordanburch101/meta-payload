@@ -21,6 +21,8 @@ export default async function RootLayout({
 }) {
   const { isEnabled } = await draftMode()
 
+  console.log('Layout rendering with preview:', isEnabled)
+
   return (
     <CSPostHogProvider>
       <html lang="en" suppressHydrationWarning>

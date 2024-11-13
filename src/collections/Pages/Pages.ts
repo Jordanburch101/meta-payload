@@ -4,6 +4,8 @@ import { Image } from "@/blocks/image/schema";
 import { HeroHighlight } from "@/blocks/heroHighlight/schema";
 import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
+import { TikTacToe } from "@/blocks/tikTacToe/schema";
+
 import { revalidatePage } from './hooks/revalidatePage'
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
@@ -86,7 +88,8 @@ export const Pages: CollectionConfig = {
                             Image,
                             HeroHighlight,
                             Spotlight,
-                            FormBlock
+                            FormBlock,
+                            TikTacToe,
                         ]
                     }]
                 },

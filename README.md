@@ -26,7 +26,6 @@ This template includes a pre-configured setup with:
 ### Collections
 - [x] Users
   - [x] Basic user fields
-  - [ ] Roles and permissions
   - [x] Profile management
 - [x] Media
   - [x] Image uploads

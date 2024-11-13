@@ -2,6 +2,7 @@ import { getPayloadHMR } from "@payloadcms/next/utilities"
 import config from "@/payload.config"
 import Image from "next/image"
 import Link from "next/link"
+import { CMSLink } from "@/components/Link"
 
 // Add these types
 type FooterType = {
@@ -12,8 +13,19 @@ type FooterType = {
       height: number
     }
     links: Array<{
-      url: string
-      label: string
+      id: string
+      link: {
+        url?: string
+        label: string
+        [key: string]: any // for additional CMSLink props
+      }
+      children?: Array<{
+        link: {
+          url?: string
+          label: string
+          [key: string]: any // for additional CMSLink props
+        }
+      }>
     }>
     copyright: string
 }
@@ -32,9 +44,29 @@ export default async function Footer() {
                         {footer.copyright}
                     </div>
                 </div>
-                <nav>
+                <nav className="flex items-center gap-4">
                     {footer.links.map((link) => (
-                        <Link className="text-white" key={link.url} href={link.url || '#'}>{link.label}</Link>
+                        <div key={link.id} className="relative group">
+                            <CMSLink 
+                                className="text-white" 
+                                appearance="inline"
+                                {...link.link}
+                            />
+                            {link.children && link.children.length > 0 && (
+                                <div className="absolute left-0 top-full hidden group-hover:block bg-slate-800 p-2 rounded-md min-w-[200px]">
+                                    <div className="flex flex-col gap-2">
+                                        {link.children.map((child, index) => (
+                                            <CMSLink 
+                                                key={index}
+                                                className="text-white hover:text-gray-300 whitespace-nowrap" 
+                                                appearance="inline"
+                                                {...child.link}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </nav>
             </div>

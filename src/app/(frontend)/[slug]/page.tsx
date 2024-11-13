@@ -6,7 +6,7 @@ import React, { cache, Fragment } from 'react'
 
 import type { Page as PageType } from '../../../payload-types'
 
-import { RenderBlocks } from '@/utils/RenderBlocks'
+import { RenderBlocks } from '@/blocks/utils/RenderBlocks'
 import { generateMeta } from '@/utils/generateMeta'
 import { draftMode } from 'next/headers'
 import { PayloadRedirects } from '@/components/PayloadRedirects'

@@ -1,4 +1,6 @@
+import { link } from "@/fields/link";
 import { GlobalConfig } from "payload";
+import { revalidateFooter } from "./hooks/revalidateFooter";
 
 export const Footer: GlobalConfig = {
     slug: 'footer',
@@ -15,17 +17,26 @@ export const Footer: GlobalConfig = {
             label: 'Links',
             type: 'array',
             fields: [
+                link({
+                    appearances: false
+                }),
                 {
-                    name: 'label',
-                    label: 'Label',
-                    type: 'text',
-                },
-                {
-                    name: 'url',
-                    label: 'URL',
-                    type: 'text',
-                },
+                    name: 'children',
+                    label: 'Dropdown Links',
+                    type: 'array',
+                    fields: [
+                        link({
+                            appearances: false
+                        })
+                    ],
+                    admin: {
+                        condition: () => true
+                    }
+                }
             ],
+            minRows: 1,
+            maxRows: 5,
+            required: true,
         },
         {
             name: 'copyright',
@@ -34,4 +45,7 @@ export const Footer: GlobalConfig = {
             required: true,
         },
     ],
+    hooks: {
+        afterChange: [revalidateFooter],
+    },
 }

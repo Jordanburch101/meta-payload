@@ -17,10 +17,10 @@ const collectionLabels = {
     plural: 'Pages',
     singular: 'Page',
   },
-  // posts: {
-  //   plural: 'Posts',
-  //   singular: 'Post',
-  // },
+  posts: {
+    plural: 'Posts',
+    singular: 'Post',
+  },
   // projects: {
   //   plural: 'Projects',
   //   singular: 'Project',
@@ -46,7 +46,7 @@ export const AdminBar: React.FC<{
     setShow(Boolean(user?.id))
   }, [])
 
-  const id = collection === 'pages' ? slug : undefined
+  const id = collection === 'pages' || collection === 'posts' ? slug : undefined
 
   return (
     <div

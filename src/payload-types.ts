@@ -134,6 +134,11 @@ export interface Page {
           blockType: 'spotlight';
         }
       | FormBlock
+      | {
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'tik-tac-toe';
+        }
     )[];
   };
   meta?: {
@@ -604,6 +609,12 @@ export interface PagesSelect<T extends boolean = true> {
                     id?: T;
                     blockName?: T;
                   };
+              'tik-tac-toe'?:
+                | T
+                | {
+                    id?: T;
+                    blockName?: T;
+                  };
             };
       };
   meta?:
@@ -936,13 +947,34 @@ export interface Header {
 export interface Footer {
   id: number;
   logo: number | Media;
-  links?:
-    | {
-        label?: string | null;
-        url?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  links: {
+    link: {
+      type?: ('reference' | 'custom') | null;
+      newTab?: boolean | null;
+      reference?: {
+        relationTo: 'pages';
+        value: number | Page;
+      } | null;
+      url?: string | null;
+      label: string;
+    };
+    children?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: number | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
   copyright: string;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -994,8 +1026,29 @@ export interface FooterSelect<T extends boolean = true> {
   links?:
     | T
     | {
-        label?: T;
-        url?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              label?: T;
+            };
+        children?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
         id?: T;
       };
   copyright?: T;

@@ -31,8 +31,10 @@
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.1.4",
     "@sentry/nextjs": "^8",
     "@vercel/speed-insights": "^1.1.0",
+    "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",
@@ -53,6 +55,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.6.4",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.9.0",
     "@types/react": "npm:types-react@19.0.0-rc.1",
