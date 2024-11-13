@@ -1,27 +1,14 @@
-// Client.tsx
 'use client'
-
-export const dynamic = "force-dynamic";
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import { useConfetti } from './Confetti'
-
+import confetti from 'canvas-confetti'
 type Player = 'X' | 'O' | null
-
 export default function TicTacToe() {
- const [isLoaded, setIsLoaded] = useState(false)
- const [board, setBoard] = useState<Player[]>(Array(9).fill(null))
- const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
- const [winner, setWinner] = useState<Player>(null)
- const [winningLine, setWinningLine] = useState<number[] | null>(null)
- const { trigger: triggerWinAnimation } = useConfetti()
-
- useEffect(() => {
-   setIsLoaded(true)
- }, [])
-
+  const [board, setBoard] = useState<Player[]>(Array(9).fill(null))
+  const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
+  const [winner, setWinner] = useState<Player>(null)
+  const [winningLine, setWinningLine] = useState<number[] | null>(null)
   const checkWinner = (squares: Player[]): [Player, number[] | null] => {
     const lines = [
       [0, 1, 2],
@@ -33,24 +20,19 @@ export default function TicTacToe() {
       [0, 4, 8],
       [2, 4, 6],
     ]
-
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i]
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
         return [squares[a], lines[i]]
       }
     }
-
     return [null, null]
   }
-
   const handleClick = (index: number) => {
     if (board[index] || winner) return
-
     const newBoard = [...board]
     newBoard[index] = currentPlayer
     setBoard(newBoard)
-
     const [newWinner, newWinningLine] = checkWinner(newBoard)
     if (newWinner) {
       setWinner(newWinner)
@@ -60,14 +42,69 @@ export default function TicTacToe() {
       setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X')
     }
   }
-
   const resetGame = () => {
     setBoard(Array(9).fill(null))
     setCurrentPlayer('X')
     setWinner(null)
     setWinningLine(null)
   }
-
+  const triggerWinAnimation = useCallback(() => {
+    // Initial burst of confetti
+    const count = 200
+    const defaults = {
+      origin: { y: 0.7 }
+    }
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      })
+    }
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    })
+    fire(0.2, {
+      spread: 60,
+    })
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8
+    })
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2
+    })
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    })
+    // Slower, sustained shower of confetti
+    setTimeout(() => {
+      const slowConfettiInterval = setInterval(() => {
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ff0000', '#00ff00', '#0000ff']
+        })
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ff0000', '#00ff00', '#0000ff']
+        })
+      }, 150)
+      // Stop the slower confetti after 3 seconds
+      setTimeout(() => clearInterval(slowConfettiInterval), 3000)
+    }, 1000)
+  }, [])
   const getGradientPosition = (index: number) => {
     if (!winningLine) return ''
     const lineStart = Math.min(...winningLine)
@@ -75,7 +112,6 @@ export default function TicTacToe() {
     const offset = position * 100 / (winningLine.length - 1)
     return `${offset}%`
   }
-
   const renderSquare = (index: number) => (
     <motion.div
       whileHover={{ scale: 1.1 }}
@@ -95,13 +131,11 @@ export default function TicTacToe() {
       </Button>
     </motion.div>
   )
-
   useEffect(() => {
     if (winner) {
       triggerWinAnimation()
     }
   }, [winner, triggerWinAnimation])
-
   return (
     <div className="flex flex-col items-center">
       <div className="grid grid-cols-3 gap-2 mb-4" role="grid" aria-label="Tic Tac Toe Board">
