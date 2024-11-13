@@ -2,13 +2,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import confetti from 'canvas-confetti'
 type Player = 'X' | 'O' | null
 export default function TicTacToe() {
   const [board, setBoard] = useState<Player[]>(Array(9).fill(null))
   const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
   const [winner, setWinner] = useState<Player>(null)
   const [winningLine, setWinningLine] = useState<number[] | null>(null)
+  const [confettiInstance, setConfettiInstance] = useState<any>(null)
+  useEffect(() => {
+    import('canvas-confetti').then((confettiModule) => {
+      const confetti = confettiModule.default
+      setConfettiInstance(() => confetti)
+    })
+  }, [])
   const checkWinner = (squares: Player[]): [Player, number[] | null] => {
     const lines = [
       [0, 1, 2],
@@ -49,17 +55,21 @@ export default function TicTacToe() {
     setWinningLine(null)
   }
   const triggerWinAnimation = useCallback(() => {
-    // Initial burst of confetti
+    if (!confettiInstance) return
     const count = 200
     const defaults = {
       origin: { y: 0.7 }
     }
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio)
-      })
+    function fire(particleRatio: number, opts: any) {
+      try {
+        confettiInstance({
+          ...defaults,
+          ...opts,
+          particleCount: Math.floor(count * particleRatio)
+        })
+      } catch (error) {
+        console.error('Confetti error:', error)
+      }
     }
     fire(0.25, {
       spread: 26,
@@ -83,28 +93,31 @@ export default function TicTacToe() {
       spread: 120,
       startVelocity: 45,
     })
-    // Slower, sustained shower of confetti
     setTimeout(() => {
-      const slowConfettiInterval = setInterval(() => {
-        confetti({
-          particleCount: 2,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#ff0000', '#00ff00', '#0000ff']
-        })
-        confetti({
-          particleCount: 2,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#ff0000', '#00ff00', '#0000ff']
-        })
+      const interval = setInterval(() => {
+        try {
+          confettiInstance({
+            particleCount: 2,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#ff0000', '#00ff00', '#0000ff']
+          })
+          confettiInstance({
+            particleCount: 2,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#ff0000', '#00ff00', '#0000ff']
+          })
+        } catch (error) {
+          console.error('Confetti interval error:', error)
+          clearInterval(interval)
+        }
       }, 150)
-      // Stop the slower confetti after 3 seconds
-      setTimeout(() => clearInterval(slowConfettiInterval), 3000)
+      setTimeout(() => clearInterval(interval), 3000)
     }, 1000)
-  }, [])
+  }, [confettiInstance])
   const getGradientPosition = (index: number) => {
     if (!winningLine) return ''
     const lineStart = Math.min(...winningLine)

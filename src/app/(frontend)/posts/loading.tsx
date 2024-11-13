@@ -5,7 +5,7 @@ tailspin.register()
 
 export default function Loader() {
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen">
+    <section className="flex flex-col items-center justify-center pb-24 min-h-screen">
       <div className="flex flex-col items-center justify-center">
         <div className="grid place-items-center">
           {/* @ts-ignore */}
