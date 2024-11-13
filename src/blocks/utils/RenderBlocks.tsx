@@ -8,6 +8,8 @@ import SpotlightServer from '@/blocks/spotlight/Server'
 import {FormBlockClient} from '@/blocks/form/Client'
 import TikTacToeServer from '../tikTacToe/Server'
 import InfiniteMovingCardsServer from '../infiniteMovingCards/Server'
+import GithubGlobeServer from '../githubGlobe/Server'
+import TextEffectServer from '../textEffect/Server'
 
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
@@ -18,6 +20,8 @@ const blockComponents = {
     'formBlock': FormBlockClient,
     'tik-tac-toe': TikTacToeServer,
     'infinite-moving-cards': InfiniteMovingCardsServer,
+    'github-globe': GithubGlobeServer,
+    'text-effect': TextEffectServer,
 }
 
 export const RenderBlocks: React.FC<{

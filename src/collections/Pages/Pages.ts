@@ -5,6 +5,7 @@ import { HeroHighlight } from "@/blocks/heroHighlight/schema";
 import { CollectionConfig } from "payload";
 import { Spotlight } from "@/blocks/spotlight/schema";
 import { TikTacToe } from "@/blocks/tikTacToe/schema";
+import { TextEffect } from "@/blocks/textEffect/schema";
 
 import { revalidatePage } from './hooks/revalidatePage'
 
@@ -16,6 +17,7 @@ import { authenticatedOrPublished } from "@/access/authenticatedOrPublished";
 import { populatePublishedAt } from "@/hooks/populatePublishedAt";
 import { generatePreviewPath } from '@/utils/generatePreviewPath'
 import { InfiniteMovingCards } from "@/blocks/infiniteMovingCards/schema";
+import { GithubGlobe } from "@/blocks/githubGlobe/schema";
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -92,6 +94,8 @@ export const Pages: CollectionConfig = {
                             FormBlock,
                             TikTacToe,
                             InfiniteMovingCards,
+                            GithubGlobe,
+                            TextEffect,
                         ]
                     }]
                 },

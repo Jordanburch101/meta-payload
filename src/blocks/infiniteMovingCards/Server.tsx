@@ -8,7 +8,7 @@ type Card = {
 
 export default function InfiniteMovingCardsServer({cards}: {cards: Card[]}) {  
     return (
-        <div className="container mx-auto flex max-w-screen-xl justify-center">
+        <div className="container mx-auto my-24 flex max-w-screen-xl justify-center">
             <InfiniteMovingCardsClient cards={cards} />
         </div>
     )

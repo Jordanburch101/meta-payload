@@ -152,6 +152,19 @@ export interface Page {
           blockName?: string | null;
           blockType: 'infinite-moving-cards';
         }
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'github-globe';
+        }
+      | {
+          text: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'text-effect';
+        }
     )[];
   };
   meta?: {
@@ -639,6 +652,21 @@ export interface PagesSelect<T extends boolean = true> {
                           title?: T;
                           id?: T;
                         };
+                    id?: T;
+                    blockName?: T;
+                  };
+              'github-globe'?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              'text-effect'?:
+                | T
+                | {
+                    text?: T;
                     id?: T;
                     blockName?: T;
                   };
