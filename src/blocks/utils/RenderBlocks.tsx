@@ -11,6 +11,8 @@ import InfiniteMovingCardsServer from '../infiniteMovingCards/Server'
 import GithubGlobeServer from '../githubGlobe/Server'
 import TextEffectServer from '../textEffect/Server'
 import ConfettiHeaderBlockServer from '../confettiHeader/Server'
+import TextImageServer from '../textImage/Server'
+
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
     'spotlight': SpotlightServer,
@@ -23,6 +25,7 @@ const blockComponents = {
     'github-globe': GithubGlobeServer,
     'text-effect': TextEffectServer,
     'confetti-header': ConfettiHeaderBlockServer,
+    'text-image': TextImageServer,
 }
 
 export const RenderBlocks: React.FC<{

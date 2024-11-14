@@ -7,7 +7,7 @@ import { Spotlight } from "@/blocks/spotlight/schema";
 import { TikTacToe } from "@/blocks/tikTacToe/schema";
 import { TextEffect } from "@/blocks/textEffect/schema";
 import { ConfettiHeader } from "@/blocks/confettiHeader/schema";
-
+import { TextImage } from "@/blocks/textImage/schema";
 import { revalidatePage } from './hooks/revalidatePage'
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
@@ -98,6 +98,7 @@ export const Pages: CollectionConfig = {
                             GithubGlobe,
                             TextEffect,
                             ConfettiHeader,
+                            TextImage,
                         ]
                     }]
                 },

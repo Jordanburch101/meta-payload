@@ -138,3 +138,4 @@ export const link: LinkType = ({ appearances, disableLabel = false, overrides = 
 
   return deepMerge(linkResult, overrides)
 }
+

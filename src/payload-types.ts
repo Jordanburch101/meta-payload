@@ -171,6 +171,30 @@ export interface Page {
           blockName?: string | null;
           blockType: 'confetti-header';
         }
+      | {
+          title?: string | null;
+          description?: string | null;
+          image: number | Media;
+          buttons?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: number | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                  appearance?: ('default' | 'outline') | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'text-image';
+        }
     )[];
   };
   meta?: {
@@ -680,6 +704,30 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              'text-image'?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    image?: T;
+                    buttons?:
+                      | T
+                      | {
+                          link?:
+                            | T
+                            | {
+                                type?: T;
+                                newTab?: T;
+                                reference?: T;
+                                url?: T;
+                                label?: T;
+                                appearance?: T;
+                              };
+                          id?: T;
+                        };
                     id?: T;
                     blockName?: T;
                   };
