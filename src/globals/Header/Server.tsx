@@ -14,6 +14,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 
@@ -152,22 +153,26 @@ export default async function Header() {
                                                     {link.children.map((child, index) => (
                                                         <div key={index} className="flex items-center gap-2">
                                                             <span className="text-white/90">-</span>
-                                                            <CMSLink
-                                                                key={index}
+                                                            <SheetClose asChild>
+                                                                <CMSLink
+                                                                    key={index}
                                                                 className="text-white/90 hover:text-white transition-colors"
                                                                 appearance="inline"
-                                                                {...child.link}
-                                                            />
+                                                                    {...child.link}
+                                                                />
+                                                            </SheetClose>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         ) : (
-                                            <CMSLink
-                                                className="text-white hover:text-white/70 transition-colors"
+                                            <SheetClose asChild>
+                                                <CMSLink
+                                                    className="text-white hover:text-white/70 transition-colors"
                                                 appearance="inline"
                                                 {...link.link}
-                                            />
+                                                />
+                                            </SheetClose>
                                         )}
                                     </div>
                                 ))}
@@ -208,4 +213,3 @@ export default async function Header() {
         </section>
     )
 }
-
