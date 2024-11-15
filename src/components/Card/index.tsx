@@ -69,7 +69,7 @@ export const Card: React.FC<{
         {titleToUse && (
           <div className="prose">
             <h3>
-              <Link className="not-prose" href={href} ref={link.ref}>
+              <Link className="not-prose text-white" href={href} ref={link.ref}>
                 {titleToUse}
               </Link>
             </h3>

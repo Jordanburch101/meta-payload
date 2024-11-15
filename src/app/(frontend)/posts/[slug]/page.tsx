@@ -11,6 +11,7 @@ import RichText from '@/components/RichText'
 import type { Post } from '@/payload-types'
 
 import { generateMeta } from '@/utils/generateMeta'
+import { TracingBeam } from '@/components/ui/tracing-beam'
 
 export async function generateStaticParams() {
   const payload = await getPayloadHMR({ config: configPromise })
@@ -49,13 +50,15 @@ export default async function Post({ params: paramsPromise }: Args) {
 
 
       <div className="flex flex-col items-center gap-4 pt-8">
-        <div className="container lg:mx-0 lg:grid lg:grid-cols-[1fr_48rem_1fr] grid-rows-[1fr]">
-          <RichText
+        <TracingBeam className="px-6">
+          <div className="lg:mx-0 lg:grid lg:grid-cols-[1fr_48rem_1fr] grid-rows-[1fr]">
+            <RichText
             className="lg:grid lg:grid-cols-subgrid col-start-1 col-span-3 grid-rows-[1fr]"
             content={post.content}
-            enableGutter={false}
-          />
-        </div>
+              enableGutter={false}
+            />
+          </div>
+        </TracingBeam>
 
         {post.relatedPosts && post.relatedPosts.length > 0 && (
           <RelatedPosts
