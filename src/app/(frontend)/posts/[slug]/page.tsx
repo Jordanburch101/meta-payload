@@ -6,12 +6,11 @@ import configPromise from '@payload-config'
 import { getPayloadHMR } from '@payloadcms/next/utilities'
 import { draftMode } from 'next/headers'
 import React, { cache } from 'react'
-import RichText from '@/components/RichText'
 
 import type { Post } from '@/payload-types'
 
 import { generateMeta } from '@/utils/generateMeta'
-import { TracingBeam } from '@/components/ui/tracing-beam'
+import TracingBeamPost from '@/components/TracingBeamPost/Client'
 
 export async function generateStaticParams() {
   const payload = await getPayloadHMR({ config: configPromise })
@@ -50,15 +49,7 @@ export default async function Post({ params: paramsPromise }: Args) {
 
 
       <div className="flex flex-col items-center gap-4 pt-8">
-        <TracingBeam className="px-6">
-          <div className="lg:mx-0 lg:grid lg:grid-cols-[1fr_48rem_1fr] grid-rows-[1fr]">
-            <RichText
-            className="lg:grid lg:grid-cols-subgrid col-start-1 col-span-3 grid-rows-[1fr]"
-            content={post.content}
-              enableGutter={false}
-            />
-          </div>
-        </TracingBeam>
+        <TracingBeamPost post={post} />
 
         {post.relatedPosts && post.relatedPosts.length > 0 && (
           <RelatedPosts

@@ -75,7 +75,6 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
     <NextImage
       alt={alt || ''}
       className={cn(imgClassName, 'w-full aspect-[17/10] object-cover')}
-      fill={fill}
       height={!fill ? height : undefined}
       onClick={onClick}
       onLoad={() => {
