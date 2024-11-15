@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { TracingBeam } from '@/components/ui/tracing-beam'
 import RichText from '@/components/RichText'
