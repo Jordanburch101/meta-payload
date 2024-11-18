@@ -17,15 +17,22 @@ export const CurrentPageAdmin = ({ adminBarProps }: { adminBarProps?: PayloadAdm
       console.log('Checking page:', slug)
       
       try {
-        // Extract the actual slug, handling posts paths
         const cleanSlug = slug.startsWith('/posts/') 
           ? slug.replace('/posts/', '') 
           : slug.slice(1)
 
         const pageResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/pages?where[slug][equals]=${cleanSlug}`)
+        if (pageResponse.status === 404) {
+          setValidSlug(null)
+          return
+        }
         const pageData = await pageResponse.json()
         
         const postResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/posts?where[slug][equals]=${cleanSlug}`)
+        if (postResponse.status === 404) {
+          setValidSlug(null)
+          return
+        }
         const postData = await postResponse.json()
         
         if (slug === 'index' || (pageData.docs && pageData.docs.length > 0)) {
