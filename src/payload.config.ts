@@ -173,20 +173,20 @@ export default buildConfig({
       },
     }),
     // sentry plugin
-    sentryPlugin({
-      options: {
-        captureErrors: [400, 403, 404],
-        context: ({ defaultContext, req }) => {
-          return {
-            ...defaultContext,
-            tags: {
-              locale: req.locale,
-            },
-          }
-        },
-        debug: true,
-      },
-      Sentry,
-    }),
+    // sentryPlugin({
+    //   options: {
+    //     captureErrors: [400, 403, 404],
+    //     context: ({ defaultContext, req }) => {
+    //       return {
+    //         ...defaultContext,
+    //         tags: {
+    //           locale: req.locale,
+    //         },
+    //       }
+    //     },
+    //     debug: true,
+    //   },
+    //   Sentry,
+    // }),
   ],
 })
