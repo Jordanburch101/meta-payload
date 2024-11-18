@@ -197,6 +197,13 @@ export interface Page {
           blockType: 'text-image';
         }
       | {
+          rows: {
+            'first-link'?: {
+              link?: string | null;
+              title?: string | null;
+            };
+            id?: string | null;
+          }[];
           id?: string | null;
           blockName?: string | null;
           blockType: 'links-preview';
@@ -740,6 +747,17 @@ export interface PagesSelect<T extends boolean = true> {
               'links-preview'?:
                 | T
                 | {
+                    rows?:
+                      | T
+                      | {
+                          'first-link'?:
+                            | T
+                            | {
+                                link?: T;
+                                title?: T;
+                              };
+                          id?: T;
+                        };
                     id?: T;
                     blockName?: T;
                   };

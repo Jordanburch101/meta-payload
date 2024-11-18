@@ -8,6 +8,30 @@ export const LinksPreview: Block = {
     plural: 'Links Previews',
   },
   fields: [
-    
+    {
+      name: 'rows',
+      label: 'Rows',
+      type: 'array',
+      required: true,
+      fields: [
+        {
+          name: 'first-link',
+          label: 'First Link',
+          type: 'group',
+          fields: [
+            {
+              name: 'link',
+              label: 'Link',
+              type: 'text',
+            },
+            {
+              name: 'title',
+              label: 'Title',
+              type: 'text',
+            },
+          ],
+        },
+      ]
+    }
   ]
 }
