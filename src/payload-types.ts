@@ -197,6 +197,20 @@ export interface Page {
           blockType: 'text-image';
         }
       | {
+          rows: {
+            'first-text'?: string | null;
+            'first-link'?: {
+              link?: string | null;
+              title?: string | null;
+            };
+            'second-text'?: string | null;
+            'second-link'?: {
+              link?: string | null;
+              title?: string | null;
+            };
+            'third-text'?: string | null;
+            id?: string | null;
+          }[];
           id?: string | null;
           blockName?: string | null;
           blockType: 'links-preview';
@@ -740,6 +754,26 @@ export interface PagesSelect<T extends boolean = true> {
               'links-preview'?:
                 | T
                 | {
+                    rows?:
+                      | T
+                      | {
+                          'first-text'?: T;
+                          'first-link'?:
+                            | T
+                            | {
+                                link?: T;
+                                title?: T;
+                              };
+                          'second-text'?: T;
+                          'second-link'?:
+                            | T
+                            | {
+                                link?: T;
+                                title?: T;
+                              };
+                          'third-text'?: T;
+                          id?: T;
+                        };
                     id?: T;
                     blockName?: T;
                   };
