@@ -15,6 +15,11 @@ export const LinksPreview: Block = {
       required: true,
       fields: [
         {
+          name: 'first-text',
+          label: 'First Text',
+          type: 'text',
+        },
+        {
           name: 'first-link',
           label: 'First Link',
           type: 'group',
@@ -30,6 +35,33 @@ export const LinksPreview: Block = {
               type: 'text',
             },
           ],
+        },
+        {
+          name: 'second-text',
+          label: 'Second Text',
+          type: 'text',
+        },
+        {
+          name: 'second-link',
+          label: 'Second Link',
+          type: 'group',
+          fields: [
+            {
+              name: 'link',
+              label: 'Link',
+              type: 'text',
+            },
+            {
+              name: 'title',
+              label: 'Title',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          name: 'third-text',
+          label: 'Third Text',
+          type: 'text',
         },
       ]
     }

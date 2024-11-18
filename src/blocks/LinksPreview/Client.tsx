@@ -2,29 +2,51 @@
 import React from "react";
 import { LinkPreview } from "@/components/ui/link-preview";
 
-export function LinkPreviewClient() {
+interface LinkPreviewClientProps {
+    rows: any[];
+    
+}
+
+export function LinkPreviewClient({ rows }: LinkPreviewClientProps) {
   return (
     <div className="flex justify-center items-center flex-col px-4">
-      <p className="text-neutral-500 dark:text-neutral-400 text-xl md:text-3xl max-w-3xl mx-auto mb-10">
-        <LinkPreview url="https://tailwindcss.com" className="font-bold">
-          Tailwind CSS
-        </LinkPreview>{" "}
-        and{" "}
-        <LinkPreview url="https://framer.com/motion" className="font-bold">
-          Framer Motion
-        </LinkPreview>{" "}
-        are a great way to build modern websites.
-      </p>
-      <p className="text-neutral-500 dark:text-neutral-400 text-xl md:text-3xl max-w-3xl mx-auto">
-        Visit{" "}
-        <LinkPreview
-          url="https://ui.aceternity.com"
-          className="font-bold bg-clip-text text-transparent bg-gradient-to-br from-purple-500 to-pink-500"
-        >
-          Aceternity UI
-        </LinkPreview>{" "}
-        for amazing Tailwind and Framer Motion components.
-      </p>
+      {rows.map((row, index) => (
+        <p key={index} className="text-neutral-500 dark:text-neutral-400 text-xl md:text-3xl max-w-3xl mx-auto mb-10">
+          {row['first-text'] && (
+            <>
+              {row['first-text']}{" "}
+            </>
+          )}
+          {row['first-link'] && (
+            <LinkPreview url={row['first-link'].link} className="font-bold">
+              {row['first-link'].title}
+            </LinkPreview>
+          )}
+          {row['second-text'] && (
+            <>
+              {" "}{row['second-text']}{" "}
+            </>
+          )}
+          {row['second-link'] && (
+            <LinkPreview url={row['second-link'].link} className="font-bold">
+              {row['second-link'].title}
+            </LinkPreview>
+          )}
+          {row['third-text'] && (
+            <>
+              {" "}{row['third-text']}{" "}
+            </>
+          )}
+          {row['third-link'] && (
+            <LinkPreview
+              url={row['third-link'].link}
+              className="font-bold bg-clip-text text-transparent bg-gradient-to-br from-purple-500 to-pink-500"
+            >
+              {row['third-link'].title}
+            </LinkPreview>
+          )}
+        </p>
+      ))}
     </div>
   );
 }
