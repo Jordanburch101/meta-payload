@@ -30,8 +30,6 @@ export const Card = React.memo(
         alt={card.title}
         fill
         className="object-cover absolute inset-0"
-        placeholder="blur"
-        blurDataURL={card.src}
       />
       <div
         className={cn(

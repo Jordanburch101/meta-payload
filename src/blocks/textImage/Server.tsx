@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { CMSLink } from '@/components/Link'
+import DynamicImage from "@/components/ui/dynamic-image"
 
 interface ButtonProps {
   title: string
@@ -49,13 +50,7 @@ export default function TextImageServer({
             </div>
           </div>
           <div className={`flex justify-center ${imageOrder}`}>
-            <Image
-              alt={image.alt}
-              className="aspect-[4/3] overflow-hidden rounded-xl object-cover object-center"
-              height="600"
-              src={image.url}
-              width="800"
-            />
+            <DynamicImage containerClass="aspect-[4/3] overflow-hidden rounded-xl object-cover object-center" url={image.url} alt={image.alt} />
           </div>
         </div>
       </div>
