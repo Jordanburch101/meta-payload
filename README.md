@@ -19,7 +19,6 @@ This template includes a pre-configured setup with:
 
 ### Core Setup
 - [x] Basic user authentication and roles
-- [ ] Dashboard customization
 - [x] Environment configuration
 - [x] API route setup
 
@@ -69,8 +68,8 @@ This template includes a pre-configured setup with:
 
 ### Additional Features
 - [ ] Search functionality
-- [ ] Performance optimization
-- [ ] Security hardening
+- [x] Performance optimization
+- [x] Security hardening
 - [ ] Documentation
 - [x] Sentry
 - [x] Speed Insights
