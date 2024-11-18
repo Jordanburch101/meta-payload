@@ -19,6 +19,7 @@ import { populatePublishedAt } from "@/hooks/populatePublishedAt";
 import { generatePreviewPath } from '@/utils/generatePreviewPath'
 import { InfiniteMovingCards } from "@/blocks/infiniteMovingCards/schema";
 import { GithubGlobe } from "@/blocks/githubGlobe/schema";
+import { LinksPreview } from "@/blocks/LinksPreview/schema";
 
 export const Pages: CollectionConfig = {
     slug: 'pages',
@@ -99,6 +100,7 @@ export const Pages: CollectionConfig = {
                             TextEffect,
                             ConfettiHeader,
                             TextImage,
+                            LinksPreview,
                         ]
                     }]
                 },

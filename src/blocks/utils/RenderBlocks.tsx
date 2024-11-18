@@ -12,6 +12,7 @@ import GithubGlobeServer from '../githubGlobe/Server'
 import TextEffectServer from '../textEffect/Server'
 import ConfettiHeaderBlockServer from '../confettiHeader/Server'
 import TextImageServer from '../textImage/Server'
+import LinksPreviewServer from '../LinksPreview/Server'
 
 const blockComponents = {
     'hero-highlight': HeroHighlightServer,
@@ -26,6 +27,7 @@ const blockComponents = {
     'text-effect': TextEffectServer,
     'confetti-header': ConfettiHeaderBlockServer,
     'text-image': TextImageServer,
+    'links-preview': LinksPreviewServer,
 }
 
 export const RenderBlocks: React.FC<{

@@ -196,6 +196,11 @@ export interface Page {
           blockName?: string | null;
           blockType: 'text-image';
         }
+      | {
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'links-preview';
+        }
     )[];
   };
   meta?: {
@@ -729,6 +734,12 @@ export interface PagesSelect<T extends boolean = true> {
                               };
                           id?: T;
                         };
+                    id?: T;
+                    blockName?: T;
+                  };
+              'links-preview'?:
+                | T
+                | {
                     id?: T;
                     blockName?: T;
                   };

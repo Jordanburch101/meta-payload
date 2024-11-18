@@ -12,6 +12,9 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    domains: [
+      "api.microlink.io", // Microlink Image Preview
+    ],
   },
 }
 
