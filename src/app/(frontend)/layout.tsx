@@ -27,11 +27,11 @@ export default async function RootLayout({
     <CSPostHogProvider>
       <html lang="en" suppressHydrationWarning>
         <body className="flex flex-col h-screen justify-between dark bg-black">
-          <CurrentPageAdmin
+          {/* <CurrentPageAdmin
             adminBarProps={{
               preview: isEnabled,
             }}
-          />
+          /> */}
           <LivePreviewListener />
           <Header />
           {/* Layout UI */}
