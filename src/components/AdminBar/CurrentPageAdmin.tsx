@@ -13,7 +13,7 @@ export const CurrentPageAdmin = ({ adminBarProps }: { adminBarProps?: PayloadAdm
 
   useEffect(() => {
     const checkPage = async () => {
-      const slug = pathname === '/' ? 'home' : pathname
+      const slug = pathname === '/' ? 'index' : pathname
       console.log('Checking page:', slug)
       
       try {
@@ -28,7 +28,7 @@ export const CurrentPageAdmin = ({ adminBarProps }: { adminBarProps?: PayloadAdm
         const postResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/posts?where[slug][equals]=${cleanSlug}`)
         const postData = await postResponse.json()
         
-        if (slug === 'home' || (pageData.docs && pageData.docs.length > 0)) {
+        if (slug === 'index' || (pageData.docs && pageData.docs.length > 0)) {
           setValidSlug(cleanSlug)
         } else if (postData.docs && postData.docs.length > 0) {
           setValidSlug(`posts/${cleanSlug}`)

@@ -25,7 +25,7 @@ export async function generateStaticParams() {
 
   const params = pages.docs
     ?.filter((doc) => {
-      return doc.slug !== 'home'
+      return doc.slug !== 'index'
     })
     .map(({ slug }) => {
       return { slug }
@@ -61,7 +61,7 @@ type Args = {
 }
 
 export default async function Page({ params: paramsPromise }: Args) {
-  const { slug = 'home' } = await paramsPromise
+  const { slug = 'index' } = await paramsPromise
   const url = '/' + slug
   
   let page: PageType | null
@@ -84,7 +84,7 @@ export default async function Page({ params: paramsPromise }: Args) {
 }
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
-  const { slug = 'home' } = await paramsPromise
+  const { slug = 'index' } = await paramsPromise
   const page = await queryPageBySlug({
     slug,
   })
