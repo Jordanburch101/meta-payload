@@ -11,7 +11,7 @@ export function LinkPreviewClient({ rows }: LinkPreviewClientProps) {
   return (
     <div className="flex justify-center items-center flex-col px-4">
       {rows.map((row, index) => (
-        <p key={index} className="text-neutral-500 dark:text-neutral-400 text-xl md:text-3xl max-w-3xl mx-auto mb-10">
+        <div key={index} className="text-neutral-500 dark:text-neutral-400 text-xl md:text-3xl max-w-3xl mx-auto mb-10">
           {row['first-text'] && (
             <>
               {row['first-text']}{" "}
@@ -45,7 +45,7 @@ export function LinkPreviewClient({ rows }: LinkPreviewClientProps) {
               {row['third-link'].title}
             </LinkPreview>
           )}
-        </p>
+        </div>
       ))}
     </div>
   );
