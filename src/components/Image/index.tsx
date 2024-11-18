@@ -1,5 +1,6 @@
 import React from 'react'
 import { Media } from '@/payload-types'
+import NextImage from 'next/image'
 
 interface ImageProps {
   image: Media | {
@@ -20,7 +21,7 @@ export const Image: React.FC<ImageProps> = ({ image, alt, width, height, classNa
   if (!image?.url) return null
 
   return (
-    <img
+    <NextImage 
       src={image.url}
       alt={alt || image.alt || ''}
       width={width || image.width || undefined}
