@@ -13,6 +13,7 @@ interface TextImageLayoutProps {
   imageOnRight?: boolean
   title: string
   description: string
+  alignment: 'left' | 'right'
   image: {
     url: string
     alt: string
@@ -24,14 +25,15 @@ export default function TextImageServer({
   imageOnRight = true,
   title,
   description,
+  alignment,
   image,
   buttons,
 }: TextImageLayoutProps) {
-  const contentOrder = imageOnRight ? "lg:order-first" : "lg:order-last"
-  const imageOrder = imageOnRight ? "lg:order-last" : "lg:order-first"
+  const contentOrder = alignment === 'right' ? "lg:order-first" : "lg:order-last"
+  const imageOrder = alignment === 'right' ? "lg:order-last" : "lg:order-first"
 
   return (
-    <section className="py-12 lg:py-24">
+    <section className="my-12 md:my-24">
       <div className="container px-4 md:px-6">
         <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className={`space-y-4 ${contentOrder}`}>

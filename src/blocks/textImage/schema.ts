@@ -16,6 +16,22 @@ export const TextImage: Block = {
             type: 'textarea',
         },
         {
+            name: 'alignment',
+            label: 'Alignment',
+            type: 'select',
+            options: [
+                {
+                    label: 'Left',
+                    value: 'left',
+                },
+                {
+                    label: 'Right',
+                    value: 'right',
+                },
+            ],
+            required: true,
+        },
+        {
             name: 'image',
             label: 'Image',
             type: 'upload',

@@ -7,7 +7,7 @@ import { Post } from '@/payload-types'
 export default function TracingBeamPost({ post }: { post: Post }) {
   return (
     <TracingBeam className="px-6">
-      <div className="lg:mx-0 lg:grid lg:grid-cols-[1fr_48rem_1fr] grid-rows-[1fr]">
+      <div className="lg:mx-0 lg:grid lg:grid-cols-[1fr_48rem_1fr] grid-rows-[1fr] ps-4 md:ps-0">
         <RichText
           className="lg:grid lg:grid-cols-subgrid col-start-1 col-span-3 grid-rows-[1fr]"
           content={post.content}

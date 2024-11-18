@@ -15,7 +15,7 @@ export const RichText: Block = {
                 features: ({ rootFeatures }) => {
                   return [
                     ...rootFeatures.filter(feature => feature.key !== 'relationship'),
-                    HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+                    HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'] }),
                     FixedToolbarFeature(),
                     InlineToolbarFeature(),
                   ]

@@ -134,7 +134,7 @@ export const FormBlockClient: React.FC<
           <RichText content={confirmationMessage} />
         )}
         {isLoading && !hasSubmitted && (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2 py-10">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
             <p>Loading, please wait...</p>
           </div>
