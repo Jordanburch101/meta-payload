@@ -15,7 +15,7 @@ This template includes a pre-configured setup with:
 - **Database**: Supabase PostgreSQL
 - **Storage Adapter**: Supabase S3
 
-## Todo List
+## Todo 
 
 ### Core Setup
 - [x] Basic user authentication and roles
