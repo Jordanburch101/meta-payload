@@ -1,4 +1,4 @@
-import { getPayloadHMR } from "@payloadcms/next/utilities"
+import { getPayload } from 'payload'
 import config from "@/payload.config"
 import Image from "next/image"
 import { CMSLink } from '@/components/Link'
@@ -54,7 +54,7 @@ type HeaderType = {
 }
 
 export default async function Header() {
-    const payload = await getPayloadHMR({config})
+    const payload = await getPayload({config})
     const header = await payload.findGlobal({
         slug: 'header',
     }) as HeaderType
