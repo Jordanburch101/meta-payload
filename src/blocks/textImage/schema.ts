@@ -16,6 +16,11 @@ export const TextImage: Block = {
             type: 'textarea',
         },
         {
+            name: 'content',
+            label: 'Content',
+            type: 'textarea',
+        },
+        {
             name: 'alignment',
             label: 'Alignment',
             type: 'select',
