@@ -175,6 +175,7 @@ export interface Page {
       | {
           title?: string | null;
           description?: string | null;
+          content?: string | null;
           alignment: 'left' | 'right';
           image: number | Media;
           buttons?:
@@ -733,6 +734,7 @@ export interface PagesSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     description?: T;
+                    content?: T;
                     alignment?: T;
                     image?: T;
                     buttons?:

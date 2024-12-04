@@ -48,7 +48,7 @@
     "ldrs": "^1.0.2",
     "lucide-react": "^0.454.0",
     "mini-svg-data-uri": "^1.4.4",
-    "next": "15.0.0",
+    "next": "15.0.3",
     "payload": "3.0.1",
     "payload-admin-bar": "^1.0.6",
     "plaiceholder": "^3.0.0",
