@@ -1,4 +1,4 @@
-import { getPayloadHMR } from "@payloadcms/next/utilities"
+import { getPayload } from 'payload'
 import config from "@/payload.config"
 import Image from "next/image"
 import Link from "next/link"
@@ -31,7 +31,7 @@ type FooterType = {
 }
 
 export default async function Footer() {
-    const payload = await getPayloadHMR({config})
+    const payload = await getPayload({config})
     const footer = await payload.findGlobal({
         slug: 'footer',
     }) as FooterType

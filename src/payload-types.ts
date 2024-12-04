@@ -52,9 +52,9 @@ export interface Config {
   user: User & {
     collection: 'users';
   };
-  jobs?: {
+  jobs: {
     tasks: unknown;
-    workflows?: unknown;
+    workflows: unknown;
   };
 }
 export interface UserAuthOperations {
@@ -175,6 +175,7 @@ export interface Page {
       | {
           title?: string | null;
           description?: string | null;
+          content?: string | null;
           alignment: 'left' | 'right';
           image: number | Media;
           buttons?:
@@ -733,6 +734,7 @@ export interface PagesSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     description?: T;
+                    content?: T;
                     alignment?: T;
                     image?: T;
                     buttons?:
@@ -784,11 +786,9 @@ export interface PagesSelect<T extends boolean = true> {
   meta?:
     | T
     | {
-        overview?: T;
         title?: T;
         image?: T;
         description?: T;
-        preview?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -806,11 +806,9 @@ export interface PostsSelect<T extends boolean = true> {
   meta?:
     | T
     | {
-        overview?: T;
         title?: T;
         image?: T;
         description?: T;
-        preview?: T;
       };
   publishedAt?: T;
   authors?: T;
