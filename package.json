@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --turbopack",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
@@ -47,14 +47,14 @@
     "jsonwebtoken": "^9.0.2",
     "ldrs": "^1.0.2",
     "lucide-react": "^0.454.0",
-    "next": "15.0.3",
+    "next": "15.1.0",
     "payload": "3.3.0",
     "payload-admin-bar": "^1.0.6",
     "plaiceholder": "^3.0.0",
     "posthog-js": "^1.181.0",
     "qss": "^3.0.0",
-    "react": "19.0.0-rc-65a56d0e-20241020",
-    "react-dom": "19.0.0-rc-65a56d0e-20241020",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-hook-form": "^7.53.1",
     "sharp": "0.32.6",
     "tailwind-merge": "^2.5.4",
@@ -66,12 +66,12 @@
     "@types/canvas-confetti": "^1.6.4",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.9.0",
-    "@types/react": "npm:types-react@19.0.0-rc.1",
-    "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1",
+    "@types/react": "19.0.1",
+    "@types/react-dom": "19.0.2",
     "@types/three": "^0.170.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
-    "eslint-config-next": "15.0.0",
+    "eslint-config-next": "15.1.0",
     "mini-svg-data-uri": "^1.4.4",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
@@ -83,8 +83,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/react": "npm:types-react@19.0.0-rc.1",
-      "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1"
+      "@types/react": "19.0.1",
+      "@types/react-dom": "19.0.2"
     }
   },
   "overrides": {
