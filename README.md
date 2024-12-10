@@ -1,3 +1,5 @@
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v3/monitor/1p2iz.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+
 # Payload CMS + Next.js 15 Template
 
 A powerful, flexible starter template combining Payload CMS with Next.js 15 for building modern web applications. This template provides a solid foundation for content management and frontend development.
