@@ -11,6 +11,9 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
+import { sentryPlugin } from '@payloadcms/plugin-sentry'
+import * as Sentry from '@sentry/nextjs'
+
 
 import { Users } from './collections/Users/Users'
 import { Media } from './collections/Media/Media'
@@ -169,6 +172,10 @@ export default buildConfig({
           })
         },
       },
+    }),
+    // sentry plugin
+    sentryPlugin({
+      Sentry,
     }),
   ],
 })

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --turbopack",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
@@ -22,6 +22,7 @@
     "@payloadcms/payload-cloud": "3.3.0",
     "@payloadcms/plugin-form-builder": "3.3.0",
     "@payloadcms/plugin-redirects": "3.3.0",
+    "@payloadcms/plugin-sentry": "3.3.0",
     "@payloadcms/plugin-seo": "3.3.0",
     "@payloadcms/richtext-lexical": "3.3.0",
     "@payloadcms/storage-s3": "3.3.0",
