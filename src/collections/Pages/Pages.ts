@@ -8,7 +8,7 @@ import { TikTacToe } from "@/blocks/tikTacToe/schema";
 import { TextEffect } from "@/blocks/textEffect/schema";
 import { ConfettiHeader } from "@/blocks/confettiHeader/schema";
 import { TextImage } from "@/blocks/textImage/schema";
-import { revalidatePage } from './hooks/revalidatePage'
+import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
 import { OverviewField, MetaTitleField, MetaImageField, MetaDescriptionField, PreviewField } from '@payloadcms/plugin-seo/fields'
 import { slugField } from "@/fields/slug";
@@ -147,7 +147,8 @@ export const Pages: CollectionConfig = {
       duration: 600, // Duration in seconds
     },
     hooks: {
-        afterChange: [revalidatePage],  
-        beforeChange: [populatePublishedAt],
+      afterChange: [revalidatePage],
+      beforeChange: [populatePublishedAt],
+      afterDelete: [revalidateDelete],
     },
 }
