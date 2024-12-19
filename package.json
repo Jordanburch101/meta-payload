@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --turbo",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
@@ -48,7 +48,8 @@
     "graphql": "^16.9.0",
     "jsonwebtoken": "^9.0.2",
     "ldrs": "^1.0.2",
-    "libsql": "0.5.0-pre.5",
+    "libsql": "^0.4.6",
+    "@libsql/client": "^0.14.0",
     "lucide-react": "^0.454.0",
     "next": "15.1.0",
     "payload": "3.9.0",
