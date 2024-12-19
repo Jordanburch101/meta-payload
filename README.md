@@ -9,13 +9,13 @@ A powerful, flexible starter template combining Payload CMS with Next.js 15 for 
 This template includes a pre-configured setup with:
 - Payload CMS for headless content management
 - Next.js 15 for frontend development
-- Supabase PostgreSQL for the database
-- Supabase S3 storage for media files
+- [SQLite with Turso](https://turso.tech/) for the database
+- [Supabase S3](https://supabase.com/storage) storage for media files
 
 ## Attributes
 
-- **Database**: Supabase PostgreSQL
-- **Storage Adapter**: Supabase S3
+- **Database**: [SQLite with Turso](https://turso.tech/)
+- **Storage Adapter**: [Supabase S3](https://supabase.com/storage)
 
 ## Todo List
 
@@ -73,6 +73,6 @@ This template includes a pre-configured setup with:
 - [x] Performance optimization
 - [x] Security hardening
 - [ ] Documentation
-- [x] Sentry
+- [x] [Sentry](https://sentry.io/)
 - [x] Speed Insights
-- [x] PostHog Analytics
+- [x] [PostHog Analytics](https://posthog.com/)
