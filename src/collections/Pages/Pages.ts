@@ -137,11 +137,9 @@ export const Pages: CollectionConfig = {
     ],
     versions: {
         drafts: {
-            autosave: {
-                interval: 100, // This autosaves every 100 milliseconds (10 times per second) for optimal live preview
-            },
-    },
-    maxPerDoc: 50,
+            autosave: false,
+        },
+        maxPerDoc: 50,
     },
     lockDocuments: {
       duration: 600, // Duration in seconds
