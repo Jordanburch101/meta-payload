@@ -1,5 +1,4 @@
-// storage-adapter-import-placeholder
-import { postgresAdapter } from '@payloadcms/db-postgres'
+import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { seoPlugin } from '@payloadcms/plugin-seo'
@@ -86,9 +85,10 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: postgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URL || '',
+  db: sqliteAdapter({
+    client: {
+      url: process.env.DATABASE_URL || '',
+      authToken: process.env.DATABASE_AUTH_TOKEN || '',
     },
   }),
   sharp,

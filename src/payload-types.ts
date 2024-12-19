@@ -678,15 +678,7 @@ export interface PagesSelect<T extends boolean = true> {
                     id?: T;
                     blockName?: T;
                   };
-              formBlock?:
-                | T
-                | {
-                    form?: T;
-                    enableIntro?: T;
-                    introContent?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              formBlock?: T | FormBlockSelect<T>;
               'tik-tac-toe'?:
                 | T
                 | {
@@ -793,6 +785,17 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock_select".
+ */
+export interface FormBlockSelect<T extends boolean = true> {
+  form?: T;
+  enableIntro?: T;
+  introContent?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
