@@ -69,7 +69,7 @@ This template includes a pre-configured setup with:
   - [x] Redirect tracking
 
 ### Additional Features
-- [ ] Search functionality
+- [x] Search functionality
 - [x] Performance optimization
 - [x] Security hardening
 - [ ] Documentation
