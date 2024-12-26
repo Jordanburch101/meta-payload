@@ -9,6 +9,7 @@ env:
   S3_ENDPOINT: 'https://vfmxvvugriytncpzypvm.supabase.co/storage/v1/s3'
   S3_REGION: 'ap-southeast-2'
   BACKUP_RETENTION_DAYS: 30
+  BETTER_STACK_HEARTBEAT: 'https://uptime.betterstack.com/api/v1/heartbeat/PgcWvW8C3Navz8Eo3aYC1WF4'
 
 jobs:
   backup:
@@ -25,7 +26,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3 dropbox
+          pip install boto3 dropbox requests
+
+      - name: Start Heartbeat
+        run: |
+          curl -X GET ${{ env.BETTER_STACK_HEARTBEAT }}/start
 
       - name: Perform incremental backup and cleanup
         env:
@@ -41,8 +46,20 @@ jobs:
           import os
           import json
           import shutil
+          import requests
           from pathlib import Path
           from datetime import datetime, timedelta
+          
+          def send_heartbeat(status, msg=""):
+              """Send heartbeat to Better Stack"""
+              heartbeat_url = os.environ["BETTER_STACK_HEARTBEAT"]
+              if status == "fail":
+                  heartbeat_url += "/fail"
+              try:
+                  response = requests.get(f"{heartbeat_url}?msg={msg}")
+                  print(f"Heartbeat sent: {status} - {msg}")
+              except Exception as e:
+                  print(f"Failed to send heartbeat: {str(e)}")
           
           # Initialize S3 client with Supabase config
           session = boto3.Session(
@@ -127,6 +144,7 @@ jobs:
               
               # Get current S3 state
               current_s3_state = get_s3_object_metadata(os.environ["S3_BUCKET_NAME"])
+              send_heartbeat("success", f"Found {len(current_s3_state)} files in S3")
               
               # Get previous backup state
               previous_state = get_dropbox_metadata()
@@ -178,15 +196,29 @@ jobs:
               # Clean up old backups
               cleanup_old_backups()
               
-              print(f"Backup completed to: {backup_folder}")
-              print(f"Successfully processed: {success_count} files")
+              final_message = f"Backup completed: {success_count} files processed successfully"
               if error_count > 0:
-                  print(f"Errors encountered: {error_count} files")
+                  final_message += f", {error_count} errors"
+              
+              send_heartbeat("success", final_message)
+              print(final_message)
               
           except Exception as e:
+              error_message = f"Backup failed: {str(e)}"
               # Ensure temp directory is cleaned up even if backup fails
               if temp_dir.exists():
                   clean_directory(temp_dir)
-              print(f"Backup failed with error: {str(e)}")
+              send_heartbeat("fail", error_message)
+              print(error_message)
               raise
           '
+
+      - name: Send Final Heartbeat on Failure
+        if: failure()
+        run: |
+          curl -X GET ${{ env.BETTER_STACK_HEARTBEAT }}/fail
+
+      - name: Send Final Heartbeat on Success
+        if: success()
+        run: |
+          curl -X GET ${{ env.BETTER_STACK_HEARTBEAT }}
