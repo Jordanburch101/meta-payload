@@ -40,6 +40,7 @@ jobs:
           import datetime
           import os
           import json
+          import shutil
           from pathlib import Path
           from datetime import datetime, timedelta
           
@@ -57,6 +58,13 @@ jobs:
           
           dbx = dropbox.Dropbox(os.environ["DROPBOX_ACCESS_TOKEN"])
           
+          def clean_directory(directory):
+              """Recursively remove a directory and its contents"""
+              try:
+                  shutil.rmtree(directory)
+              except Exception as e:
+                  print(f"Error cleaning directory {directory}: {str(e)}")
+          
           def get_s3_object_metadata(bucket):
               """Get metadata for all objects in S3 bucket"""
               objects = {}
@@ -73,7 +81,7 @@ jobs:
                   print(f"Error listing objects: {str(e)}")
                   raise
           
-          def get_dropbox_metadata(path="/s3_backup_current"):
+          def get_dropbox_metadata():
               """Get metadata for files in Dropbox backup"""
               try:
                   with open("last_backup_state.json", "r") as f:
@@ -111,6 +119,12 @@ jobs:
               print(f"Using endpoint: {os.environ["S3_ENDPOINT"]}")
               print(f"Using bucket: {os.environ["S3_BUCKET_NAME"]}")
               
+              # Ensure temp directory is clean at start
+              temp_dir = Path("temp")
+              if temp_dir.exists():
+                  clean_directory(temp_dir)
+              temp_dir.mkdir(exist_ok=True)
+              
               # Get current S3 state
               current_s3_state = get_s3_object_metadata(os.environ["S3_BUCKET_NAME"])
               
@@ -121,11 +135,11 @@ jobs:
               timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
               backup_folder = f"/s3_backup_{timestamp}"
               
-              # Create temporary directory for downloads
-              Path("temp").mkdir(exist_ok=True)
-              
               # Track new backup state
               new_backup_state = {}
+              
+              success_count = 0
+              error_count = 0
               
               # Process each object
               for key, metadata in current_s3_state.items():
@@ -146,10 +160,10 @@ jobs:
                               print(f"Backing up: {key}")
                               dbx.files_upload(f.read(), dropbox_path)
                           
-                          # Clean up local file
-                          Path(local_path).unlink()
+                          success_count += 1
                       except Exception as e:
                           print(f"Error processing file {key}: {str(e)}")
+                          error_count += 1
                           continue
                   
                   # Update backup state
@@ -158,15 +172,21 @@ jobs:
               # Save new backup state
               save_backup_state(new_backup_state)
               
-              # Clean up temp directory
-              Path("temp").rmdir()
+              # Clean up temp directory and its contents
+              clean_directory(temp_dir)
               
               # Clean up old backups
               cleanup_old_backups()
               
-              print(f"Incremental backup completed to: {backup_folder}")
+              print(f"Backup completed to: {backup_folder}")
+              print(f"Successfully processed: {success_count} files")
+              if error_count > 0:
+                  print(f"Errors encountered: {error_count} files")
               
           except Exception as e:
+              # Ensure temp directory is cleaned up even if backup fails
+              if temp_dir.exists():
+                  clean_directory(temp_dir)
               print(f"Backup failed with error: {str(e)}")
               raise
           '
