@@ -1,0 +1,147 @@
+name: S3 to Dropbox Incremental Backup
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at 00:00 UTC daily
+  workflow_dispatch:      # Allows manual trigger
+
+env:
+  AWS_REGION: ap-southeast-2'  # Change to your AWS region
+  BACKUP_RETENTION_DAYS: 30
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3 dropbox
+
+      - name: Perform incremental backup and cleanup
+        env:
+          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          python -c '
+          import boto3
+          import dropbox
+          import datetime
+          import os
+          import json
+          from pathlib import Path
+          from datetime import datetime, timedelta
+          
+          # Initialize clients
+          s3 = boto3.client("s3")
+          dbx = dropbox.Dropbox(os.environ["DROPBOX_ACCESS_TOKEN"])
+          
+          def get_s3_object_metadata(bucket):
+              """Get metadata for all objects in S3 bucket"""
+              objects = {}
+              paginator = s3.get_paginator("list_objects_v2")
+              for page in paginator.paginate(Bucket=bucket):
+                  for obj in page.get("Contents", []):
+                      objects[obj["Key"]] = {
+                          "last_modified": obj["LastModified"].isoformat(),
+                          "etag": obj["ETag"]
+                      }
+              return objects
+          
+          def get_dropbox_metadata(path="/s3_backup_current"):
+              """Get metadata for files in Dropbox backup"""
+              try:
+                  with open("last_backup_state.json", "r") as f:
+                      return json.load(f)
+              except FileNotFoundError:
+                  return {}
+          
+          def save_backup_state(state):
+              """Save current backup state"""
+              with open("last_backup_state.json", "w") as f:
+                  json.dump(state, f)
+          
+          def cleanup_old_backups():
+              """Remove backups older than BACKUP_RETENTION_DAYS"""
+              retention_days = int(os.environ.get("BACKUP_RETENTION_DAYS", 30))
+              cutoff_date = datetime.now() - timedelta(days=retention_days)
+              
+              # List all backup folders
+              result = dbx.files_list_folder("/s3_backup_")
+              
+              for entry in result.entries:
+                  if isinstance(entry, dropbox.files.FolderMetadata):
+                      try:
+                          # Extract date from folder name
+                          folder_date = datetime.strptime(entry.name.split("_")[2], "%Y%m%d")
+                          if folder_date < cutoff_date:
+                              print(f"Removing old backup: {entry.path_display}")
+                              dbx.files_delete_v2(entry.path_display)
+                      except (IndexError, ValueError):
+                          continue
+          
+          # Get current S3 state
+          current_s3_state = get_s3_object_metadata(os.environ["S3_BUCKET_NAME"])
+          
+          # Get previous backup state
+          previous_state = get_dropbox_metadata()
+          
+          # Create new backup folder with timestamp
+          timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+          backup_folder = f"/s3_backup_{timestamp}"
+          
+          # Create temporary directory for downloads
+          Path("temp").mkdir(exist_ok=True)
+          
+          # Track new backup state
+          new_backup_state = {}
+          
+          # Process each object
+          for key, metadata in current_s3_state.items():
+              # Check if file needs to be backed up
+              if (key not in previous_state or 
+                  previous_state[key]["etag"] != metadata["etag"]):
+                  
+                  # Download from S3
+                  local_path = f"temp/{key}"
+                  Path(local_path).parent.mkdir(parents=True, exist_ok=True)
+                  s3.download_file(os.environ["S3_BUCKET_NAME"], key, local_path)
+                  
+                  # Upload to Dropbox
+                  with open(local_path, "rb") as f:
+                      dropbox_path = f"{backup_folder}/{key}"
+                      print(f"Backing up new/modified file: {key}")
+                      dbx.files_upload(f.read(), dropbox_path)
+                  
+                  # Clean up local file
+                  Path(local_path).unlink()
+              
+              # Update backup state
+              new_backup_state[key] = metadata
+          
+          # Save new backup state
+          save_backup_state(new_backup_state)
+          
+          # Clean up temp directory
+          Path("temp").rmdir()
+          
+          # Clean up old backups
+          cleanup_old_backups()
+          
+          print(f"Incremental backup completed to: {backup_folder}")
+          '
