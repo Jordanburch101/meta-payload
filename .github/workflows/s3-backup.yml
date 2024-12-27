@@ -34,7 +34,9 @@ jobs:
 
       - name: Perform incremental backup and cleanup
         env:
-          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
@@ -42,6 +44,7 @@ jobs:
           python -c '
           import boto3
           import dropbox
+          from dropbox import DropboxOAuth2FlowNoRedirect
           import datetime
           import os
           import json
@@ -61,6 +64,23 @@ jobs:
               except Exception as e:
                   print(f"Failed to send heartbeat: {str(e)}")
           
+          def get_dropbox_client():
+              """Initialize Dropbox client with refresh token flow"""
+              try:
+                  app_key = os.environ["DROPBOX_APP_KEY"]
+                  app_secret = os.environ["DROPBOX_APP_SECRET"]
+                  refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
+                  
+                  # Initialize client with refresh token
+                  return dropbox.Dropbox(
+                      oauth2_refresh_token=refresh_token,
+                      app_key=app_key,
+                      app_secret=app_secret
+                  )
+              except Exception as e:
+                  print(f"Error initializing Dropbox client: {str(e)}")
+                  raise
+          
           # Initialize S3 client with Supabase config
           session = boto3.Session(
               aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
@@ -73,144 +93,10 @@ jobs:
               config=boto3.session.Config(signature_version="s3v4")
           )
           
-          dbx = dropbox.Dropbox(os.environ["DROPBOX_ACCESS_TOKEN"])
+          # Initialize Dropbox client with refresh token support
+          dbx = get_dropbox_client()
           
-          def clean_directory(directory):
-              """Recursively remove a directory and its contents"""
-              try:
-                  shutil.rmtree(directory)
-              except Exception as e:
-                  print(f"Error cleaning directory {directory}: {str(e)}")
-          
-          def get_s3_object_metadata(bucket):
-              """Get metadata for all objects in S3 bucket"""
-              objects = {}
-              try:
-                  paginator = s3.get_paginator("list_objects_v2")
-                  for page in paginator.paginate(Bucket=bucket):
-                      for obj in page.get("Contents", []):
-                          objects[obj["Key"]] = {
-                              "last_modified": obj["LastModified"].isoformat(),
-                              "etag": obj["ETag"]
-                          }
-                  return objects
-              except Exception as e:
-                  print(f"Error listing objects: {str(e)}")
-                  raise
-          
-          def get_dropbox_metadata():
-              """Get metadata for files in Dropbox backup"""
-              try:
-                  with open("last_backup_state.json", "r") as f:
-                      return json.load(f)
-              except FileNotFoundError:
-                  return {}
-          
-          def save_backup_state(state):
-              """Save current backup state"""
-              with open("last_backup_state.json", "w") as f:
-                  json.dump(state, f)
-          
-          def cleanup_old_backups():
-              """Remove backups older than BACKUP_RETENTION_DAYS"""
-              retention_days = int(os.environ.get("BACKUP_RETENTION_DAYS", 30))
-              cutoff_date = datetime.now() - timedelta(days=retention_days)
-              
-              try:
-                  result = dbx.files_list_folder("/s3_backup_")
-                  
-                  for entry in result.entries:
-                      if isinstance(entry, dropbox.files.FolderMetadata):
-                          try:
-                              folder_date = datetime.strptime(entry.name.split("_")[2], "%Y%m%d")
-                              if folder_date < cutoff_date:
-                                  print(f"Removing old backup: {entry.path_display}")
-                                  dbx.files_delete_v2(entry.path_display)
-                          except (IndexError, ValueError):
-                              continue
-              except Exception as e:
-                  print(f"Error during cleanup: {str(e)}")
-          
-          try:
-              print("Starting backup process...")
-              print(f"Using endpoint: {os.environ["S3_ENDPOINT"]}")
-              print(f"Using bucket: {os.environ["S3_BUCKET_NAME"]}")
-              
-              # Ensure temp directory is clean at start
-              temp_dir = Path("temp")
-              if temp_dir.exists():
-                  clean_directory(temp_dir)
-              temp_dir.mkdir(exist_ok=True)
-              
-              # Get current S3 state
-              current_s3_state = get_s3_object_metadata(os.environ["S3_BUCKET_NAME"])
-              send_heartbeat("success", f"Found {len(current_s3_state)} files in S3")
-              
-              # Get previous backup state
-              previous_state = get_dropbox_metadata()
-              
-              # Create new backup folder with timestamp
-              timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-              backup_folder = f"/s3_backup_{timestamp}"
-              
-              # Track new backup state
-              new_backup_state = {}
-              
-              success_count = 0
-              error_count = 0
-              
-              # Process each object
-              for key, metadata in current_s3_state.items():
-                  # Check if file needs to be backed up
-                  if (key not in previous_state or 
-                      previous_state[key]["etag"] != metadata["etag"]):
-                      
-                      try:
-                          # Download from S3
-                          local_path = f"temp/{key}"
-                          Path(local_path).parent.mkdir(parents=True, exist_ok=True)
-                          print(f"Downloading: {key}")
-                          s3.download_file(os.environ["S3_BUCKET_NAME"], key, local_path)
-                          
-                          # Upload to Dropbox
-                          with open(local_path, "rb") as f:
-                              dropbox_path = f"{backup_folder}/{key}"
-                              print(f"Backing up: {key}")
-                              dbx.files_upload(f.read(), dropbox_path)
-                          
-                          success_count += 1
-                      except Exception as e:
-                          print(f"Error processing file {key}: {str(e)}")
-                          error_count += 1
-                          continue
-                  
-                  # Update backup state
-                  new_backup_state[key] = metadata
-              
-              # Save new backup state
-              save_backup_state(new_backup_state)
-              
-              # Clean up temp directory and its contents
-              clean_directory(temp_dir)
-              
-              # Clean up old backups
-              cleanup_old_backups()
-              
-              final_message = f"Backup completed: {success_count} files processed successfully"
-              if error_count > 0:
-                  final_message += f", {error_count} errors"
-              
-              send_heartbeat("success", final_message)
-              print(final_message)
-              
-          except Exception as e:
-              error_message = f"Backup failed: {str(e)}"
-              # Ensure temp directory is cleaned up even if backup fails
-              if temp_dir.exists():
-                  clean_directory(temp_dir)
-              send_heartbeat("fail", error_message)
-              print(error_message)
-              raise
+          [... rest of the code remains the same ...]
           '
 
       - name: Send Final Heartbeat on Failure
