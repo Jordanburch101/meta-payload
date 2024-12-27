@@ -66,16 +66,22 @@ jobs:
             objects = s3.list_objects_v2(Bucket=bucket_name)
 
             for obj in objects.get('Contents', []):
-                # Download file from S3
+                # Prepare local file path
                 file_name = obj['Key']
-                s3.download_file(bucket_name, file_name, file_name)
+                local_file_path = os.path.join('/tmp', file_name)
+
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+
+                # Download file from S3
+                s3.download_file(bucket_name, file_name, local_file_path)
 
                 # Upload file to Dropbox
-                with open(file_name, 'rb') as f:
+                with open(local_file_path, 'rb') as f:
                     dbx.files_upload(f.read(), f'{backup_folder}/{file_name}')
 
                 # Remove local file
-                os.remove(file_name)
+                os.remove(local_file_path)
 
             print(f"Backup completed for {today}")
 
