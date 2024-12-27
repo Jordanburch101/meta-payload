@@ -25,7 +25,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install boto3 dropbox
+        pip install boto3 dropbox requests
 
     - name: Perform backup
       env:
@@ -40,6 +40,7 @@ jobs:
         import os
         import boto3
         import dropbox
+        from dropbox import DropboxOAuth2FlowNoRedirect
         from datetime import datetime, timedelta
         import requests
 
@@ -51,13 +52,30 @@ jobs:
             region_name=os.environ['S3_REGION']
         )
 
-        # Dropbox setup
-        dbx = dropbox.Dropbox(oauth2_refresh_token=os.environ['DROPBOX_REFRESH_TOKEN'],
-                              app_key=os.environ['DROPBOX_APP_KEY'],
-                              app_secret=os.environ['DROPBOX_APP_SECRET'])
+        # Dropbox setup with token refresh
+        def get_dropbox_client():
+            app_key = os.environ['DROPBOX_APP_KEY']
+            app_secret = os.environ['DROPBOX_APP_SECRET']
+            refresh_token = os.environ['DROPBOX_REFRESH_TOKEN']
+
+            try:
+                # Attempt to create a Dropbox client with the refresh token
+                return dropbox.Dropbox(oauth2_refresh_token=refresh_token,
+                                       app_key=app_key,
+                                       app_secret=app_secret)
+            except dropbox.exceptions.AuthError:
+                print("Failed to authenticate. Attempting to refresh the token...")
+                # If authentication fails, try to get a new access token
+                auth_flow = DropboxOAuth2FlowNoRedirect(app_key, app_secret)
+                oauth_result = auth_flow.refresh_access_token(refresh_token)
+                
+                # Use the new access token to create a Dropbox client
+                return dropbox.Dropbox(oauth2_access_token=oauth_result.access_token,
+                                       app_key=app_key,
+                                       app_secret=app_secret)
 
         # Backup function
-        def backup_s3_to_dropbox():
+        def backup_s3_to_dropbox(dbx):
             bucket_name = os.environ['S3_BUCKET_NAME']
             today = datetime.now().strftime('%Y-%m-%d')
             backup_folder = f'/S3_Backups/{today}'
@@ -86,7 +104,7 @@ jobs:
             print(f"Backup completed for {today}")
 
         # Remove old backups
-        def remove_old_backups():
+        def remove_old_backups(dbx):
             retention_days = int(os.environ['BACKUP_RETENTION_DAYS'])
             cutoff_date = datetime.now() - timedelta(days=retention_days)
 
@@ -100,8 +118,9 @@ jobs:
 
         # Main execution
         try:
-            backup_s3_to_dropbox()
-            remove_old_backups()
+            dbx = get_dropbox_client()
+            backup_s3_to_dropbox(dbx)
+            remove_old_backups(dbx)
             # Send success heartbeat
             requests.get(os.environ['BETTER_STACK_HEARTBEAT'])
             print("Backup process completed successfully")
