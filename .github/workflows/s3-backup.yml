@@ -65,39 +65,39 @@ jobs:
               except Exception as e:
                   print(f"Failed to send heartbeat: {str(e)}")
 
-          def refresh_access_token():
-              """Manually refresh the access token using refresh token"""
-              try:
-                  app_key = os.environ["DROPBOX_APP_KEY"]
-                  app_secret = os.environ["DROPBOX_APP_SECRET"]
-                  refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
-
-                  print("Attempting to refresh access token...")
-                  print(f"Using app key: {app_key[:4]}...{app_key[-4:]}")  # Only show first/last 4 chars
-                  print(f"Refresh token length: {len(refresh_token)}")
-
-                  # Manually construct the token refresh request
-                  token_url = "https://api.dropboxapi.com/oauth2/token"
-                  data = {
-                      "grant_type": "refresh_token",
-                      "refresh_token": refresh_token,
-                      "client_id": app_key,
-                      "client_secret": app_secret
-                  }
-                  
-                  response = requests.post(token_url, data=data)
-                  response_json = response.json()
-                  
-                  if response.status_code == 200:
-                      print("Successfully refreshed access token")
-                      return response_json["access_token"]
-                  else:
-                      print(f"Token refresh failed with status code: {response.status_code}")
-                      print(f"Error response: {response_json}")
-                      raise Exception(f"Failed to refresh access token: {response_json.get('error_description', 'Unknown error')}")
-              except Exception as e:
-                  print(f"Error during token refresh: {str(e)}")
-                  raise
+        def refresh_access_token():
+            """Manually refresh the access token using refresh token"""
+            try:
+                app_key = os.environ["DROPBOX_APP_KEY"]
+                app_secret = os.environ["DROPBOX_APP_SECRET"]
+                refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
+        
+                print("Attempting to refresh access token...")
+                print(f"Using app key: {app_key[:4]}...{app_key[-4:]}")  # Only show first/last 4 chars
+                print(f"Refresh token length: {len(refresh_token)}")
+        
+                # Manually construct the token refresh request
+                token_url = "https://api.dropboxapi.com/oauth2/token"
+                data = {
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                    "client_id": app_key,
+                    "client_secret": app_secret
+                }
+                
+                response = requests.post(token_url, data=data)
+                response_json = response.json()
+                
+                if response.status_code == 200:
+                    print("Successfully refreshed access token")
+                    return response_json["access_token"]
+                else:
+                    print(f"Token refresh failed with status code: {response.status_code}")
+                    print(f"Error response: {response_json}")
+                    raise Exception(f"Failed to refresh access token: {response_json.get('error_description', 'Unknown error')}")
+            except Exception as e:
+                print(f"Error during token refresh: {str(e)}")
+                raise
           
           def get_dropbox_client():
               """Initialize Dropbox client with manual token refresh"""
