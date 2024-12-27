@@ -1,102 +1,112 @@
-name: Backup S3 to Dropbox
+name: S3 to Dropbox Backup
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Runs daily at midnight UTC
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  S3_ENDPOINT: 'https://vfmxvvugriytncpzypvm.supabase.co/storage/v1/s3'
+  S3_REGION: 'ap-southeast-2'
+  BACKUP_RETENTION_DAYS: 30
+  BETTER_STACK_HEARTBEAT: 'https://uptime.betterstack.com/api/v1/heartbeat/PgcWvW8C3Navz8Eo3aYC1WF4'
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-
-    env:
-      S3_ENDPOINT: 'https://vfmxvvugriytncpzypvm.supabase.co/storage/v1/s3'
-      S3_REGION: 'ap-southeast-2'
-      BACKUP_RETENTION_DAYS: 30
-      BETTER_STACK_HEARTBEAT: 'https://uptime.betterstack.com/api/v1/heartbeat/PgcWvW8C3Navz8Eo3aYC1WF4'
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install boto3 dropbox
+    - name: Install dependencies
+      run: |
+        pip install boto3 dropbox
 
-      - name: Run backup script
-        env:
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          python <<EOF
-          import boto3
-          import dropbox
-          import os
-          from datetime import datetime, timedelta
-          import requests
+    - name: Perform backup
+      env:
+        DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+        DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+        DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+        S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+        S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      run: |
+        python - <<EOF
+        import os
+        import boto3
+        import dropbox
+        from datetime import datetime, timedelta
+        import requests
 
-          # S3 client setup
-          s3_client = boto3.client(
-              's3',
-              endpoint_url=os.getenv('S3_ENDPOINT'),
-              aws_access_key_id=os.getenv('S3_ACCESS_KEY_ID'),
-              aws_secret_access_key=os.getenv('S3_SECRET_ACCESS_KEY'),
-              region_name=os.getenv('S3_REGION')
-          )
+        # S3 setup
+        s3 = boto3.client('s3',
+            endpoint_url=os.environ['S3_ENDPOINT'],
+            aws_access_key_id=os.environ['S3_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['S3_SECRET_ACCESS_KEY'],
+            region_name=os.environ['S3_REGION']
+        )
 
-          # Dropbox client setup
-          db_client = dropbox.Dropbox(
-              app_key=os.getenv('DROPBOX_APP_KEY'),
-              app_secret=os.getenv('DROPBOX_APP_SECRET'),
-              oauth2_refresh_token=os.getenv('DROPBOX_REFRESH_TOKEN')
-          )
+        # Dropbox setup
+        dbx = dropbox.Dropbox(oauth2_refresh_token=os.environ['DROPBOX_REFRESH_TOKEN'],
+                              app_key=os.environ['DROPBOX_APP_KEY'],
+                              app_secret=os.environ['DROPBOX_APP_SECRET'])
 
-          bucket_name = os.getenv('S3_BUCKET_NAME')
-          backup_retention_days = int(os.getenv('BACKUP_RETENTION_DAYS'))
-          date_str = datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
-          backup_folder = f'/backups/{bucket_name}/{date_str}/'
+        # Backup function
+        def backup_s3_to_dropbox():
+            bucket_name = os.environ['S3_BUCKET_NAME']
+            today = datetime.now().strftime('%Y-%m-%d')
+            backup_folder = f'/S3_Backups/{today}'
 
-          # Backup S3 objects
-          print("Starting backup...")
-          response = s3_client.list_objects_v2(Bucket=bucket_name)
-          if 'Contents' in response:
-              for obj in response['Contents']:
-                  key = obj['Key']
-                  local_file = f"/tmp/{key.replace('/', '_')}"
-                  s3_client.download_file(bucket_name, key, local_file)
+            # List all objects in the S3 bucket
+            objects = s3.list_objects_v2(Bucket=bucket_name)
 
-                  with open(local_file, 'rb') as f:
-                      db_client.files_upload(f.read(), f"{backup_folder}{key}")
+            for obj in objects.get('Contents', []):
+                # Download file from S3
+                file_name = obj['Key']
+                s3.download_file(bucket_name, file_name, file_name)
 
-                  os.remove(local_file)
+                # Upload file to Dropbox
+                with open(file_name, 'rb') as f:
+                    dbx.files_upload(f.read(), f'{backup_folder}/{file_name}')
 
-          # Remove old backups from Dropbox
-          print("Removing old backups...")
-          retention_date = datetime.utcnow() - timedelta(days=backup_retention_days)
-          for entry in db_client.files_list_folder(f'/backups/{bucket_name}').entries:
-              if isinstance(entry, dropbox.files.FolderMetadata):
-                  try:
-                      folder_date = datetime.strptime(entry.name, '%Y-%m-%d_%H-%M-%S')
-                      if folder_date < retention_date:
-                          db_client.files_delete_v2(entry.path_lower)
-                  except ValueError:
-                      print(f"Skipping folder with unexpected name format: {entry.name}")
+                # Remove local file
+                os.remove(file_name)
 
-          # Send heartbeat
-          print("Sending heartbeat...")
-          try:
-              requests.get(os.getenv('BETTER_STACK_HEARTBEAT'))
-              print("Heartbeat sent successfully.")
-          except Exception as e:
-              print("Failed to send heartbeat:", e)
-              requests.get(f"{os.getenv('BETTER_STACK_HEARTBEAT')}/fail")
-          EOF
+            print(f"Backup completed for {today}")
+
+        # Remove old backups
+        def remove_old_backups():
+            retention_days = int(os.environ['BACKUP_RETENTION_DAYS'])
+            cutoff_date = datetime.now() - timedelta(days=retention_days)
+
+            result = dbx.files_list_folder('/S3_Backups')
+            for entry in result.entries:
+                if isinstance(entry, dropbox.files.FolderMetadata):
+                    folder_date = datetime.strptime(entry.name, '%Y-%m-%d')
+                    if folder_date < cutoff_date:
+                        dbx.files_delete_v2(entry.path_display)
+                        print(f"Removed old backup: {entry.name}")
+
+        # Main execution
+        try:
+            backup_s3_to_dropbox()
+            remove_old_backups()
+            # Send success heartbeat
+            requests.get(os.environ['BETTER_STACK_HEARTBEAT'])
+            print("Backup process completed successfully")
+        except Exception as e:
+            print(f"Error during backup process: {str(e)}")
+            # Send failure heartbeat
+            requests.get(os.environ['BETTER_STACK_HEARTBEAT'] + '/fail')
+            raise e
+        EOF
+
+    - name: Check for errors
+      if: failure()
+      run: |
+        echo "Backup process failed. Check the logs for more information."
