@@ -38,65 +38,65 @@ jobs:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           python <<EOF
-import boto3
-import dropbox
-import os
-from datetime import datetime, timedelta
+          import boto3
+          import dropbox
+          import os
+          from datetime import datetime, timedelta
+          import requests
 
-# S3 client setup
-s3_client = boto3.client(
-    's3',
-    endpoint_url=os.getenv('S3_ENDPOINT'),
-    aws_access_key_id=os.getenv('S3_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('S3_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('S3_REGION')
-)
+          # S3 client setup
+          s3_client = boto3.client(
+              's3',
+              endpoint_url=os.getenv('S3_ENDPOINT'),
+              aws_access_key_id=os.getenv('S3_ACCESS_KEY_ID'),
+              aws_secret_access_key=os.getenv('S3_SECRET_ACCESS_KEY'),
+              region_name=os.getenv('S3_REGION')
+          )
 
-# Dropbox client setup
-db_client = dropbox.Dropbox(
-    app_key=os.getenv('DROPBOX_APP_KEY'),
-    app_secret=os.getenv('DROPBOX_APP_SECRET'),
-    oauth2_refresh_token=os.getenv('DROPBOX_REFRESH_TOKEN')
-)
+          # Dropbox client setup
+          db_client = dropbox.Dropbox(
+              app_key=os.getenv('DROPBOX_APP_KEY'),
+              app_secret=os.getenv('DROPBOX_APP_SECRET'),
+              oauth2_refresh_token=os.getenv('DROPBOX_REFRESH_TOKEN')
+          )
 
-bucket_name = os.getenv('S3_BUCKET_NAME')
-backup_retention_days = int(os.getenv('BACKUP_RETENTION_DAYS'))
-date_str = datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
-backup_folder = f'/backups/{bucket_name}/{date_str}/'
+          bucket_name = os.getenv('S3_BUCKET_NAME')
+          backup_retention_days = int(os.getenv('BACKUP_RETENTION_DAYS'))
+          date_str = datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
+          backup_folder = f'/backups/{bucket_name}/{date_str}/'
 
-# Backup S3 objects
-print("Starting backup...")
-response = s3_client.list_objects_v2(Bucket=bucket_name)
-if 'Contents' in response:
-    for obj in response['Contents']:
-        key = obj['Key']
-        local_file = f"/tmp/{key.replace('/', '_')}"
-        s3_client.download_file(bucket_name, key, local_file)
+          # Backup S3 objects
+          print("Starting backup...")
+          response = s3_client.list_objects_v2(Bucket=bucket_name)
+          if 'Contents' in response:
+              for obj in response['Contents']:
+                  key = obj['Key']
+                  local_file = f"/tmp/{key.replace('/', '_')}"
+                  s3_client.download_file(bucket_name, key, local_file)
 
-        with open(local_file, 'rb') as f:
-            db_client.files_upload(f.read(), f"{backup_folder}{key}")
+                  with open(local_file, 'rb') as f:
+                      db_client.files_upload(f.read(), f"{backup_folder}{key}")
 
-        os.remove(local_file)
+                  os.remove(local_file)
 
-# Remove old backups from Dropbox
-print("Removing old backups...")
-retention_date = datetime.utcnow() - timedelta(days=backup_retention_days)
-for entry in db_client.files_list_folder(f'/backups/{bucket_name}').entries:
-    if isinstance(entry, dropbox.files.FolderMetadata):
-        try:
-            folder_date = datetime.strptime(entry.name, '%Y-%m-%d_%H-%M-%S')
-            if folder_date < retention_date:
-                db_client.files_delete_v2(entry.path_lower)
-        except ValueError:
-            print(f"Skipping folder with unexpected name format: {entry.name}")
+          # Remove old backups from Dropbox
+          print("Removing old backups...")
+          retention_date = datetime.utcnow() - timedelta(days=backup_retention_days)
+          for entry in db_client.files_list_folder(f'/backups/{bucket_name}').entries:
+              if isinstance(entry, dropbox.files.FolderMetadata):
+                  try:
+                      folder_date = datetime.strptime(entry.name, '%Y-%m-%d_%H-%M-%S')
+                      if folder_date < retention_date:
+                          db_client.files_delete_v2(entry.path_lower)
+                  except ValueError:
+                      print(f"Skipping folder with unexpected name format: {entry.name}")
 
-# Send heartbeat
-print("Sending heartbeat...")
-import requests
-try:
-    requests.get(os.getenv('BETTER_STACK_HEARTBEAT'))
-    print("Heartbeat sent successfully.")
-except Exception as e:
-    print("Failed to send heartbeat:", e)
-    requests.get(f"{os.getenv('BETTER_STACK_HEARTBEAT')}/fail")
-EOF
+          # Send heartbeat
+          print("Sending heartbeat...")
+          try:
+              requests.get(os.getenv('BETTER_STACK_HEARTBEAT'))
+              print("Heartbeat sent successfully.")
+          except Exception as e:
+              print("Failed to send heartbeat:", e)
+              requests.get(f"{os.getenv('BETTER_STACK_HEARTBEAT')}/fail")
+          EOF
