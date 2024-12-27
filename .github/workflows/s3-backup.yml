@@ -50,6 +50,7 @@ jobs:
           import json
           import shutil
           import requests
+          import time
           from pathlib import Path
           from datetime import datetime, timedelta
           
@@ -71,7 +72,6 @@ jobs:
                   app_secret = os.environ["DROPBOX_APP_SECRET"]
                   refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
                   
-                  # Initialize client with refresh token
                   return dropbox.Dropbox(
                       oauth2_refresh_token=refresh_token,
                       app_key=app_key,
@@ -80,6 +80,27 @@ jobs:
               except Exception as e:
                   print(f"Error initializing Dropbox client: {str(e)}")
                   raise
+          
+          def upload_with_retry(dbx, file_path, dropbox_path, max_retries=3):
+              """Upload to Dropbox with retry logic and token refresh"""
+              for attempt in range(max_retries):
+                  try:
+                      with open(file_path, "rb") as f:
+                          return dbx.files_upload(f.read(), dropbox_path)
+                  except dropbox.exceptions.AuthError as auth_error:
+                      if attempt < max_retries - 1:
+                          print(f"Auth error, refreshing token and retrying... (attempt {attempt + 1})")
+                          # Get a new client with fresh tokens
+                          dbx = get_dropbox_client()
+                          time.sleep(1)  # Add a small delay between retries
+                          continue
+                      raise
+                  except Exception as e:
+                      if attempt < max_retries - 1:
+                          print(f"Upload error, retrying... (attempt {attempt + 1})")
+                          time.sleep(1)
+                          continue
+                      raise
           
           def clean_directory(directory):
               """Recursively remove a directory and its contents"""
@@ -117,25 +138,38 @@ jobs:
               with open("last_backup_state.json", "w") as f:
                   json.dump(state, f)
           
-          def cleanup_old_backups():
-              """Remove backups older than BACKUP_RETENTION_DAYS"""
+          def cleanup_old_backups(dbx, max_retries=3):
+              """Remove backups older than BACKUP_RETENTION_DAYS with retry logic"""
               retention_days = int(os.environ.get("BACKUP_RETENTION_DAYS", 30))
               cutoff_date = datetime.now() - timedelta(days=retention_days)
               
-              try:
-                  result = dbx.files_list_folder("/s3_backup_")
-                  
-                  for entry in result.entries:
-                      if isinstance(entry, dropbox.files.FolderMetadata):
-                          try:
-                              folder_date = datetime.strptime(entry.name.split("_")[2], "%Y%m%d")
-                              if folder_date < cutoff_date:
-                                  print(f"Removing old backup: {entry.path_display}")
-                                  dbx.files_delete_v2(entry.path_display)
-                          except (IndexError, ValueError):
-                              continue
-              except Exception as e:
-                  print(f"Error during cleanup: {str(e)}")
+              for attempt in range(max_retries):
+                  try:
+                      result = dbx.files_list_folder("/s3_backup_")
+                      
+                      for entry in result.entries:
+                          if isinstance(entry, dropbox.files.FolderMetadata):
+                              try:
+                                  folder_date = datetime.strptime(entry.name.split("_")[2], "%Y%m%d")
+                                  if folder_date < cutoff_date:
+                                      print(f"Removing old backup: {entry.path_display}")
+                                      dbx.files_delete_v2(entry.path_display)
+                              except (IndexError, ValueError):
+                                  continue
+                      break  # If successful, break the retry loop
+                  except dropbox.exceptions.AuthError:
+                      if attempt < max_retries - 1:
+                          print(f"Auth error during cleanup, refreshing token... (attempt {attempt + 1})")
+                          dbx = get_dropbox_client()
+                          time.sleep(1)
+                          continue
+                      raise
+                  except Exception as e:
+                      print(f"Error during cleanup: {str(e)}")
+                      if attempt < max_retries - 1:
+                          time.sleep(1)
+                          continue
+                      raise
           
           try:
               print("Starting backup process...")
@@ -154,7 +188,7 @@ jobs:
                   config=boto3.session.Config(signature_version="s3v4")
               )
               
-              # Initialize Dropbox client with refresh token support
+              # Initialize Dropbox client
               dbx = get_dropbox_client()
               
               # Ensure temp directory is clean at start
@@ -193,11 +227,10 @@ jobs:
                           print(f"Downloading: {key}")
                           s3.download_file(os.environ["S3_BUCKET_NAME"], key, local_path)
                           
-                          # Upload to Dropbox
-                          with open(local_path, "rb") as f:
-                              dropbox_path = f"{backup_folder}/{key}"
-                              print(f"Backing up: {key}")
-                              dbx.files_upload(f.read(), dropbox_path)
+                          # Upload to Dropbox with retry logic
+                          dropbox_path = f"{backup_folder}/{key}"
+                          print(f"Backing up: {key}")
+                          upload_with_retry(dbx, local_path, dropbox_path)
                           
                           success_count += 1
                       except Exception as e:
@@ -214,8 +247,8 @@ jobs:
               # Clean up temp directory and its contents
               clean_directory(temp_dir)
               
-              # Clean up old backups
-              cleanup_old_backups()
+              # Clean up old backups with retry logic
+              cleanup_old_backups(dbx)
               
               final_message = f"Backup completed: {success_count} files processed successfully"
               if error_count > 0:
