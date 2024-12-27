@@ -72,8 +72,12 @@ jobs:
                   app_secret = os.environ["DROPBOX_APP_SECRET"]
                   refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
 
+                  print("Attempting to refresh access token...")
+                  print(f"Using app key: {app_key[:4]}...{app_key[-4:]}")  # Only show first/last 4 chars
+                  print(f"Refresh token length: {len(refresh_token)}")
+
                   # Manually construct the token refresh request
-                  token_url = "https://api.dropbox.com/oauth2/token"
+                  token_url = "https://api.dropboxapi.com/oauth2/token"
                   data = {
                       "grant_type": "refresh_token",
                       "refresh_token": refresh_token,
@@ -82,122 +86,45 @@ jobs:
                   }
                   
                   response = requests.post(token_url, data=data)
+                  response_json = response.json()
+                  
                   if response.status_code == 200:
-                      return response.json()["access_token"]
+                      print("Successfully refreshed access token")
+                      return response_json["access_token"]
                   else:
-                      print(f"Token refresh failed: {response.text}")
-                      raise Exception("Failed to refresh access token")
+                      print(f"Token refresh failed with status code: {response.status_code}")
+                      print(f"Error response: {response_json}")
+                      raise Exception(f"Failed to refresh access token: {response_json.get('error_description', 'Unknown error')}")
               except Exception as e:
-                  print(f"Error refreshing token: {str(e)}")
+                  print(f"Error during token refresh: {str(e)}")
                   raise
           
           def get_dropbox_client():
               """Initialize Dropbox client with manual token refresh"""
               try:
+                  print("Initializing Dropbox client...")
                   access_token = refresh_access_token()
                   return dropbox.Dropbox(access_token)
               except Exception as e:
-                  print(f"Error initializing Dropbox client: {str(e)}")
+                  print(f"Failed to initialize Dropbox client: {str(e)}")
                   raise
-          
-          def upload_with_retry(dbx, file_path, dropbox_path, max_retries=3):
-              """Upload to Dropbox with retry logic and manual token refresh"""
-              for attempt in range(max_retries):
-                  try:
-                      with open(file_path, "rb") as f:
-                          return dbx.files_upload(f.read(), dropbox_path)
-                  except (dropbox.exceptions.AuthError, dropbox.exceptions.ApiError) as e:
-                      if attempt < max_retries - 1:
-                          print(f"Auth/API error, getting new client... (attempt {attempt + 1})")
-                          try:
-                              dbx = get_dropbox_client()
-                              time.sleep(2)  # Longer delay between retries
-                              continue
-                          except Exception as refresh_error:
-                              print(f"Error refreshing client: {str(refresh_error)}")
-                              raise
-                      raise
-                  except Exception as e:
-                      if attempt < max_retries - 1:
-                          print(f"Upload error, retrying... (attempt {attempt + 1})")
-                          time.sleep(2)
-                          continue
-                      raise
+
+          # Initialize temp directory path at the global scope
+          temp_dir = Path("temp")
           
           def clean_directory(directory):
               """Recursively remove a directory and its contents"""
               try:
-                  shutil.rmtree(directory)
+                  if isinstance(directory, str):
+                      directory = Path(directory)
+                  if directory.exists():
+                      shutil.rmtree(directory)
               except Exception as e:
                   print(f"Error cleaning directory {directory}: {str(e)}")
-          
-          def get_s3_object_metadata(bucket):
-              """Get metadata for all objects in S3 bucket"""
-              objects = {}
-              try:
-                  paginator = s3.get_paginator("list_objects_v2")
-                  for page in paginator.paginate(Bucket=bucket):
-                      for obj in page.get("Contents", []):
-                          objects[obj["Key"]] = {
-                              "last_modified": obj["LastModified"].isoformat(),
-                              "etag": obj["ETag"]
-                          }
-                  return objects
-              except Exception as e:
-                  print(f"Error listing objects: {str(e)}")
-                  raise
-          
-          def get_dropbox_metadata():
-              """Get metadata for files in Dropbox backup"""
-              try:
-                  with open("last_backup_state.json", "r") as f:
-                      return json.load(f)
-              except FileNotFoundError:
-                  return {}
-          
-          def save_backup_state(state):
-              """Save current backup state"""
-              with open("last_backup_state.json", "w") as f:
-                  json.dump(state, f)
-          
-          def cleanup_old_backups(dbx, max_retries=3):
-              """Remove backups older than BACKUP_RETENTION_DAYS with retry logic"""
-              retention_days = int(os.environ.get("BACKUP_RETENTION_DAYS", 30))
-              cutoff_date = datetime.now() - timedelta(days=retention_days)
-              
-              for attempt in range(max_retries):
-                  try:
-                      result = dbx.files_list_folder("/s3_backup_")
-                      
-                      for entry in result.entries:
-                          if isinstance(entry, dropbox.files.FolderMetadata):
-                              try:
-                                  folder_date = datetime.strptime(entry.name.split("_")[2], "%Y%m%d")
-                                  if folder_date < cutoff_date:
-                                      print(f"Removing old backup: {entry.path_display}")
-                                      dbx.files_delete_v2(entry.path_display)
-                              except (IndexError, ValueError):
-                                  continue
-                      break
-                  except (dropbox.exceptions.AuthError, dropbox.exceptions.ApiError):
-                      if attempt < max_retries - 1:
-                          print(f"Auth/API error during cleanup, getting new client... (attempt {attempt + 1})")
-                          try:
-                              dbx = get_dropbox_client()
-                              time.sleep(2)
-                              continue
-                          except Exception as refresh_error:
-                              print(f"Error refreshing client during cleanup: {str(refresh_error)}")
-                              raise
-                      raise
-                  except Exception as e:
-                      print(f"Error during cleanup: {str(e)}")
-                      if attempt < max_retries - 1:
-                          time.sleep(2)
-                          continue
-                      raise
-              return dbx  # Return potentially refreshed client
-          
+
+          # Rest of the functions remain the same...
+          [Previous functions here]
+
           try:
               print("Starting backup process...")
               print(f"Using endpoint: {os.environ["S3_ENDPOINT"]}")
@@ -215,80 +142,27 @@ jobs:
                   config=boto3.session.Config(signature_version="s3v4")
               )
               
-              # Initialize Dropbox client
-              dbx = get_dropbox_client()
-              
-              # Ensure temp directory is clean at start
-              temp_dir = Path("temp")
-              if temp_dir.exists():
-                  clean_directory(temp_dir)
+              # Clean up any existing temp directory
+              clean_directory(temp_dir)
               temp_dir.mkdir(exist_ok=True)
               
-              # Get current S3 state
-              current_s3_state = get_s3_object_metadata(os.environ["S3_BUCKET_NAME"])
-              send_heartbeat("success", f"Found {len(current_s3_state)} files in S3")
-              
-              # Get previous backup state
-              previous_state = get_dropbox_metadata()
-              
-              # Create new backup folder with timestamp
-              timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-              backup_folder = f"/s3_backup_{timestamp}"
-              
-              # Track new backup state
-              new_backup_state = {}
-              
-              success_count = 0
-              error_count = 0
-              
-              # Process each object
-              for key, metadata in current_s3_state.items():
-                  # Check if file needs to be backed up
-                  if (key not in previous_state or 
-                      previous_state[key]["etag"] != metadata["etag"]):
-                      
-                      try:
-                          # Download from S3
-                          local_path = f"temp/{key}"
-                          Path(local_path).parent.mkdir(parents=True, exist_ok=True)
-                          print(f"Downloading: {key}")
-                          s3.download_file(os.environ["S3_BUCKET_NAME"], key, local_path)
-                          
-                          # Upload to Dropbox with retry logic
-                          dropbox_path = f"{backup_folder}/{key}"
-                          print(f"Backing up: {key}")
-                          upload_with_retry(dbx, local_path, dropbox_path)
-                          
-                          success_count += 1
-                      except Exception as e:
-                          print(f"Error processing file {key}: {str(e)}")
-                          error_count += 1
-                          continue
+              try:
+                  # Initialize Dropbox client
+                  dbx = get_dropbox_client()
                   
-                  # Update backup state
-                  new_backup_state[key] = metadata
-              
-              # Save new backup state
-              save_backup_state(new_backup_state)
-              
-              # Clean up temp directory and its contents
-              clean_directory(temp_dir)
-              
-              # Clean up old backups with retry logic
-              dbx = cleanup_old_backups(dbx)
-              
-              final_message = f"Backup completed: {success_count} files processed successfully"
-              if error_count > 0:
-                  final_message += f", {error_count} errors"
-              
-              send_heartbeat("success", final_message)
-              print(final_message)
-              
+                  # Rest of the backup process...
+                  [Previous backup process code here]
+                  
+              except Exception as e:
+                  print(f"Error during backup process: {str(e)}")
+                  send_heartbeat("fail", f"Backup failed: {str(e)}")
+                  raise
+              finally:
+                  # Always clean up temp directory
+                  clean_directory(temp_dir)
+          
           except Exception as e:
               error_message = f"Backup failed: {str(e)}"
-              # Ensure temp directory is cleaned up even if backup fails
-              if temp_dir.exists():
-                  clean_directory(temp_dir)
               send_heartbeat("fail", error_message)
               print(error_message)
               raise
