@@ -66,24 +66,29 @@ backup_folder = f'/backups/{bucket_name}/{date_str}/'
 
 # Backup S3 objects
 print("Starting backup...")
-for obj in s3_client.list_objects_v2(Bucket=bucket_name)['Contents']:
-    key = obj['Key']
-    local_file = f"/tmp/{key.replace('/', '_')}"
-    s3_client.download_file(bucket_name, key, local_file)
+response = s3_client.list_objects_v2(Bucket=bucket_name)
+if 'Contents' in response:
+    for obj in response['Contents']:
+        key = obj['Key']
+        local_file = f"/tmp/{key.replace('/', '_')}"
+        s3_client.download_file(bucket_name, key, local_file)
 
-    with open(local_file, 'rb') as f:
-        db_client.files_upload(f.read(), f"{backup_folder}{key}")
+        with open(local_file, 'rb') as f:
+            db_client.files_upload(f.read(), f"{backup_folder}{key}")
 
-    os.remove(local_file)
+        os.remove(local_file)
 
 # Remove old backups from Dropbox
 print("Removing old backups...")
 retention_date = datetime.utcnow() - timedelta(days=backup_retention_days)
 for entry in db_client.files_list_folder(f'/backups/{bucket_name}').entries:
     if isinstance(entry, dropbox.files.FolderMetadata):
-        folder_date = datetime.strptime(entry.name, '%Y-%m-%d_%H-%M-%S')
-        if folder_date < retention_date:
-            db_client.files_delete_v2(entry.path_lower)
+        try:
+            folder_date = datetime.strptime(entry.name, '%Y-%m-%d_%H-%M-%S')
+            if folder_date < retention_date:
+                db_client.files_delete_v2(entry.path_lower)
+        except ValueError:
+            print(f"Skipping folder with unexpected name format: {entry.name}")
 
 # Send heartbeat
 print("Sending heartbeat...")
