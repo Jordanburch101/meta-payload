@@ -64,41 +64,63 @@ jobs:
                   print(f"Heartbeat sent: {status} - {msg}")
               except Exception as e:
                   print(f"Failed to send heartbeat: {str(e)}")
-          
-          def get_dropbox_client():
-              """Initialize Dropbox client with refresh token flow"""
+
+          def refresh_access_token():
+              """Manually refresh the access token using refresh token"""
               try:
                   app_key = os.environ["DROPBOX_APP_KEY"]
                   app_secret = os.environ["DROPBOX_APP_SECRET"]
                   refresh_token = os.environ["DROPBOX_REFRESH_TOKEN"]
+
+                  # Manually construct the token refresh request
+                  token_url = "https://api.dropbox.com/oauth2/token"
+                  data = {
+                      "grant_type": "refresh_token",
+                      "refresh_token": refresh_token,
+                      "client_id": app_key,
+                      "client_secret": app_secret
+                  }
                   
-                  return dropbox.Dropbox(
-                      oauth2_refresh_token=refresh_token,
-                      app_key=app_key,
-                      app_secret=app_secret
-                  )
+                  response = requests.post(token_url, data=data)
+                  if response.status_code == 200:
+                      return response.json()["access_token"]
+                  else:
+                      print(f"Token refresh failed: {response.text}")
+                      raise Exception("Failed to refresh access token")
+              except Exception as e:
+                  print(f"Error refreshing token: {str(e)}")
+                  raise
+          
+          def get_dropbox_client():
+              """Initialize Dropbox client with manual token refresh"""
+              try:
+                  access_token = refresh_access_token()
+                  return dropbox.Dropbox(access_token)
               except Exception as e:
                   print(f"Error initializing Dropbox client: {str(e)}")
                   raise
           
           def upload_with_retry(dbx, file_path, dropbox_path, max_retries=3):
-              """Upload to Dropbox with retry logic and token refresh"""
+              """Upload to Dropbox with retry logic and manual token refresh"""
               for attempt in range(max_retries):
                   try:
                       with open(file_path, "rb") as f:
                           return dbx.files_upload(f.read(), dropbox_path)
-                  except dropbox.exceptions.AuthError as auth_error:
+                  except (dropbox.exceptions.AuthError, dropbox.exceptions.ApiError) as e:
                       if attempt < max_retries - 1:
-                          print(f"Auth error, refreshing token and retrying... (attempt {attempt + 1})")
-                          # Get a new client with fresh tokens
-                          dbx = get_dropbox_client()
-                          time.sleep(1)  # Add a small delay between retries
-                          continue
+                          print(f"Auth/API error, getting new client... (attempt {attempt + 1})")
+                          try:
+                              dbx = get_dropbox_client()
+                              time.sleep(2)  # Longer delay between retries
+                              continue
+                          except Exception as refresh_error:
+                              print(f"Error refreshing client: {str(refresh_error)}")
+                              raise
                       raise
                   except Exception as e:
                       if attempt < max_retries - 1:
                           print(f"Upload error, retrying... (attempt {attempt + 1})")
-                          time.sleep(1)
+                          time.sleep(2)
                           continue
                       raise
           
@@ -156,20 +178,25 @@ jobs:
                                       dbx.files_delete_v2(entry.path_display)
                               except (IndexError, ValueError):
                                   continue
-                      break  # If successful, break the retry loop
-                  except dropbox.exceptions.AuthError:
+                      break
+                  except (dropbox.exceptions.AuthError, dropbox.exceptions.ApiError):
                       if attempt < max_retries - 1:
-                          print(f"Auth error during cleanup, refreshing token... (attempt {attempt + 1})")
-                          dbx = get_dropbox_client()
-                          time.sleep(1)
-                          continue
+                          print(f"Auth/API error during cleanup, getting new client... (attempt {attempt + 1})")
+                          try:
+                              dbx = get_dropbox_client()
+                              time.sleep(2)
+                              continue
+                          except Exception as refresh_error:
+                              print(f"Error refreshing client during cleanup: {str(refresh_error)}")
+                              raise
                       raise
                   except Exception as e:
                       print(f"Error during cleanup: {str(e)}")
                       if attempt < max_retries - 1:
-                          time.sleep(1)
+                          time.sleep(2)
                           continue
                       raise
+              return dbx  # Return potentially refreshed client
           
           try:
               print("Starting backup process...")
@@ -248,7 +275,7 @@ jobs:
               clean_directory(temp_dir)
               
               # Clean up old backups with retry logic
-              cleanup_old_backups(dbx)
+              dbx = cleanup_old_backups(dbx)
               
               final_message = f"Backup completed: {success_count} files processed successfully"
               if error_count > 0:
