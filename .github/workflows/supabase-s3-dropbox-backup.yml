@@ -1,4 +1,4 @@
-name: Supabase S3 to Dropbox Backup
+name: Supabase Storage to Dropbox Backup
 
 on:
   schedule:
@@ -19,12 +19,13 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install boto3 dropbox
+        pip install requests dropbox
 
     - name: Run backup script
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        SUPABASE_BUCKET_NAME: ${{ secrets.SUPABASE_BUCKET_NAME }}
         DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: python backup_script.py
 
