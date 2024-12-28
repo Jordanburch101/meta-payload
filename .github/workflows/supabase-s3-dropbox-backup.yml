@@ -19,7 +19,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install requests dropbox
+        pip install boto3 dropbox
 
     - name: Run backup script
       env:
