@@ -26,7 +26,7 @@ def backup_to_dropbox():
     current_date = datetime.now().strftime("%Y-%m-%d")
     
     # List all objects in the Supabase bucket
-    response = s3.list_objects_v2(Bucket='your-bucket-name')
+    response = s3.list_objects_v2(Bucket='meta-payload-main-bucket')
     
     for obj in response.get('Contents', []):
         # Get the object
