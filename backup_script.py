@@ -1,10 +1,9 @@
 import os
-import boto3
+import requests
 import dropbox
-from botocore.client import Config
 from datetime import datetime, timedelta
 
-# Supabase Storage (S3) credentials
+# Supabase credentials
 supabase_url = os.environ['SUPABASE_URL']
 supabase_key = os.environ['SUPABASE_KEY']
 bucket_name = os.environ['SUPABASE_BUCKET_NAME']
@@ -12,42 +11,49 @@ bucket_name = os.environ['SUPABASE_BUCKET_NAME']
 # Dropbox credentials
 dropbox_access_token = os.environ['DROPBOX_ACCESS_TOKEN']
 
-# S3 client setup
-s3 = boto3.client(
-    's3',
-    endpoint_url=f"{supabase_url}/storage/v1",
-    aws_access_key_id=supabase_key,
-    aws_secret_access_key=supabase_key,
-    config=Config(signature_version='s3v4'),
-    region_name='ap-southeast-2'  # This is a placeholder, Supabase doesn't use regions
-)
-
 # Dropbox client setup
 dbx = dropbox.Dropbox(dropbox_access_token)
+
+def list_bucket_contents():
+    url = f"{supabase_url}/storage/v1/object/list/{bucket_name}"
+    headers = {
+        "Authorization": f"Bearer {supabase_key}",
+        "apikey": supabase_key
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+def download_file(file_path):
+    url = f"{supabase_url}/storage/v1/object/{bucket_name}/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {supabase_key}",
+        "apikey": supabase_key
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.content
 
 def backup_to_dropbox():
     current_date = datetime.now().strftime("%Y-%m-%d")
     
-    # List all objects in the bucket
-    response = s3.list_objects_v2(Bucket=bucket_name)
-    
-    if 'Contents' not in response:
-        print("No files found in the bucket or error occurred while listing files.")
-        return
+    try:
+        files = list_bucket_contents()
+        if not files:
+            print("No files found in the bucket.")
+            return
 
-    for obj in response['Contents']:
-        file_name = obj['Key']
-        try:
-            # Get the object
-            file_obj = s3.get_object(Bucket=bucket_name, Key=file_name)
-            file_content = file_obj['Body'].read()
-            
-            # Upload to Dropbox
-            dropbox_path = f"/backups/{current_date}/{file_name}"
-            dbx.files_upload(file_content, dropbox_path, mode=dropbox.files.WriteMode.overwrite)
-            print(f"Backed up: {file_name}")
-        except Exception as e:
-            print(f"Error processing {file_name}: {str(e)}")
+        for file in files:
+            file_name = file['name']
+            try:
+                file_content = download_file(file_name)
+                dropbox_path = f"/backups/{current_date}/{file_name}"
+                dbx.files_upload(file_content, dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+                print(f"Backed up: {file_name}")
+            except Exception as e:
+                print(f"Error processing {file_name}: {str(e)}")
+    except Exception as e:
+        print(f"Error listing bucket contents: {str(e)}")
 
 def delete_old_backups():
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
