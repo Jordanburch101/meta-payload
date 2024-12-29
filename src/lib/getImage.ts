@@ -3,7 +3,7 @@ import { getPlaiceholder } from 'plaiceholder'
 export async function getImage(src: string) {
   // Convert relative URLs to absolute URLs if they start with '/'
   const absoluteUrl = src.startsWith('/') 
-    ? `${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'}${src}`
+    ? `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}${src}`
     : src
 
   const buffer = await fetch(absoluteUrl).then(async res =>
