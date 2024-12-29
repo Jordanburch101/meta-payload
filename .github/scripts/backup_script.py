@@ -17,11 +17,8 @@ def backup_vercel_blob_to_dropbox():
     response = requests.get(vercel_blob_url, headers=headers)
     response.raise_for_status()
 
-    # Print the response to understand its structure
-    print(response.json())  # Add this line to inspect the response
-
-    # Assuming the response contains a list of files and directories
-    blob_data = response.json()
+    # Parse the response
+    blob_data = response.json().get('blobs', [])
 
     # Create a timestamped folder in Dropbox
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -33,11 +30,8 @@ def backup_vercel_blob_to_dropbox():
 
     # Iterate over the blob data and upload each item
     for item in blob_data:
-        # Debugging: Print each item to understand its structure
-        print(item)  # Add this line to inspect each item
-
-        # Assuming each item has a 'path' and 'url' key
-        item_path = item['path']
+        # Access the 'pathname' and 'url' keys
+        item_path = item['pathname']
         item_content = requests.get(item['url'], headers=headers).content
 
         # Construct the full Dropbox path
