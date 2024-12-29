@@ -2,6 +2,7 @@ import os
 import requests
 import dropbox
 from datetime import datetime
+import urllib.parse
 
 def backup_vercel_blob_to_dropbox():
     # Vercel Blob API endpoint
@@ -26,7 +27,9 @@ def backup_vercel_blob_to_dropbox():
 
     # Function to upload files to Dropbox
     def upload_to_dropbox(path, content):
-        dbx.files_upload(content, path, mode=dropbox.files.WriteMode.overwrite)
+        # Ensure the path is URL-encoded to handle special characters
+        encoded_path = urllib.parse.quote(path)
+        dbx.files_upload(content, encoded_path, mode=dropbox.files.WriteMode.overwrite)
 
     # Iterate over the blob data and upload each item
     for item in blob_data:
