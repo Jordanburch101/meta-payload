@@ -1,4 +1,5 @@
-[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v3/monitor/1p2iz.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1p2iz.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+[![Vercel Blob to Dropbox Backup](https://github.com/Jordanburch101/meta-payload/actions/workflows/vercel-blob-incremental-backup.yml/badge.svg)](https://github.com/Jordanburch101/meta-payload/actions/workflows/vercel-blob-incremental-backup.yml)
 
 # Payload CMS + Next.js 15 Template
 
