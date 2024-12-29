@@ -146,6 +146,7 @@ export default buildConfig({
       collections: {
         'media': {
           prefix: 'media',
+          generateFileURL: ({ filename }) => `${process.env.NEXT_PUBLIC_SERVER_URL}/media/${filename}`,
         },
       },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',

@@ -1,10 +1,7 @@
 import { getPlaiceholder } from 'plaiceholder'
 
 export async function getImage(src: string) {
-  // Convert relative URL to absolute URL if needed
-  const imageUrl = src.startsWith('http') ? src : `${process.env.NEXT_PUBLIC_SERVER_URL}${src}`
-
-  const buffer = await fetch(imageUrl).then(async res =>
+  const buffer = await fetch(src).then(async res =>
     Buffer.from(await res.arrayBuffer())
   )
 
