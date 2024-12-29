@@ -18,7 +18,7 @@ import { Users } from './collections/Users/Users'
 import { Media } from './collections/Media/Media'
 import { Pages } from './collections/Pages/Pages'
 
-import { s3Storage } from '@payloadcms/storage-s3'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { Header } from './globals/Header/schema'
 import { Footer } from './globals/Footer/schema'
 
@@ -122,24 +122,33 @@ export default buildConfig({
       },
     }),
     // storage-adapter-placeholder
-    s3Storage({
+    // s3Storage({
+    //   collections: {
+    //     'media': {
+    //       prefix: 'media',
+    //       disablePayloadAccessControl: true,
+    //       generateFileURL: ({ filename }) => `${process.env.S3_PUBLIC_ENDPOINT}/media/${filename}`,
+    //     },
+    //   },
+    //   bucket: process.env.S3_BUCKET || '',
+    //   config: {
+    //     credentials: {
+    //       accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+    //       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+    //     },
+    //     region: process.env.S3_REGION || '',
+    //     endpoint: process.env.S3_ENDPOINT || '',
+    //     forcePathStyle: true,
+    //   },
+    // }),
+    vercelBlobStorage({
+      enabled: true,
       collections: {
         'media': {
           prefix: 'media',
-          disablePayloadAccessControl: true,
-          generateFileURL: ({ filename }) => `${process.env.S3_PUBLIC_ENDPOINT}/media/${filename}`,
         },
       },
-      bucket: process.env.S3_BUCKET || '',
-      config: {
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-        },
-        region: process.env.S3_REGION || '',
-        endpoint: process.env.S3_ENDPOINT || '',
-        forcePathStyle: true,
-      },
+      token: process.env.BLOB_READ_WRITE_TOKEN || '',
     }),
     // seo plugin
     seoPlugin({
