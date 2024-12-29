@@ -77,10 +77,11 @@ def backup_vercel_blob_to_dropbox():
         folders = set()
         for item in blob_data:
             path_parts = Path(item['pathname'])
-            current = base_path
-            for part in path_parts.parts[:-1]:  # Exclude filename
-                current = f"{current}/{part}"
-                folders.add(current)
+            if path_parts.name:  # Only process paths that have a filename
+                current = base_path
+                for part in path_parts.parts[:-1]:  # Exclude filename
+                    current = f"{current}/{part}"
+                    folders.add(current)
 
         # Create all folders first
         for folder in sorted(folders):  # Sort to ensure parent folders are created first
@@ -94,15 +95,17 @@ def backup_vercel_blob_to_dropbox():
         for item in blob_data:
             try:
                 item_pathname = item['pathname']
+                
+                # Skip if this is just a folder entry (ends with /)
+                if item_pathname.endswith('/') or not Path(item_pathname).name:
+                    logger.info(f"Skipping folder entry: {item_pathname}")
+                    continue
+                
                 item_url = item['url']
                 
                 # Construct the full Dropbox path
                 dropbox_path = f"{base_path}/{item_pathname}"
                 dropbox_path = dropbox_path.replace('\\', '/').replace('//', '/')
-                
-                # Skip if this is just a folder
-                if not Path(item_pathname).name:
-                    continue
                 
                 # Download the content
                 content_response = requests.get(item_url)
