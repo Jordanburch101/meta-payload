@@ -156,6 +156,63 @@ def save_backup_metadata(dbx, base_path, metrics, file_hashes):
     except Exception as e:
         logger.error(f"Failed to save backup metadata: {str(e)}")
 
+def get_latest_backup_metadata(dbx):
+    """Find and retrieve metadata from the most recent backup."""
+    try:
+        # List all folders in root
+        result = dbx.files_list_folder('')
+        
+        # Pattern to match backup folders and extract their date
+        backup_pattern = re.compile(r'vercel_blob_backup_(\d{8})_(\d{6})')
+        
+        # Find the most recent backup folder
+        latest_backup = None
+        latest_date = None
+        
+        for entry in result.entries:
+            if not isinstance(entry, dropbox.files.FolderMetadata):
+                continue
+                
+            match = backup_pattern.match(entry.name)
+            if not match:
+                continue
+            
+            try:
+                folder_date_str = f"{match.group(1)}_{match.group(2)}"
+                folder_date = datetime.strptime(folder_date_str, '%Y%m%d_%H%M%S')
+                folder_date = folder_date.replace(tzinfo=timezone.utc)
+                
+                if latest_date is None or folder_date > latest_date:
+                    latest_date = folder_date
+                    latest_backup = entry.path_display
+                    
+            except ValueError:
+                continue
+        
+        if latest_backup:
+            try:
+                # Get the metadata file from the latest backup
+                metadata_path = f"{latest_backup}/_backup_metadata.json"
+                metadata = json.loads(dbx.files_download(metadata_path)[1].content)
+                logger.info(f"Found previous backup metadata: {latest_backup}")
+                return metadata, latest_backup
+            except Exception as e:
+                logger.warning(f"Could not read metadata from latest backup: {e}")
+                
+    except Exception as e:
+        logger.warning(f"Error finding latest backup: {e}")
+    
+    return None, None
+
+def copy_file_between_backups(dbx, src_path, dst_path):
+    """Copy a file from one backup location to another."""
+    try:
+        relocation_result = dbx.files_copy_v2(src_path, dst_path)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to copy file from {src_path} to {dst_path}: {e}")
+        return False
+
 def backup_vercel_blob_to_dropbox():
     metrics = BackupMetrics()
     file_hashes = {}
@@ -169,6 +226,10 @@ def backup_vercel_blob_to_dropbox():
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
+
+        # Get previous backup metadata
+        previous_metadata, previous_backup_path = get_latest_backup_metadata(dbx)
+        previous_hashes = previous_metadata.get('file_hashes', {}) if previous_metadata else {}
 
         # Vercel Blob API endpoint
         vercel_blob_url = "https://api.vercel.com/v1/blob"
@@ -194,38 +255,48 @@ def backup_vercel_blob_to_dropbox():
         # Ensure base folder exists
         ensure_folder_exists(dbx, base_path)
         
-        # First pass: Create all necessary folders
+        # Create folder structure
         folders = set()
         for item in blob_data:
             path_parts = Path(item['pathname'])
-            if path_parts.name:  # Only process paths that have a filename
+            if path_parts.name:
                 current = base_path
-                for part in path_parts.parts[:-1]:  # Exclude filename
+                for part in path_parts.parts[:-1]:
                     current = f"{current}/{part}"
                     folders.add(current)
 
-        # Create all folders first
-        for folder in sorted(folders):  # Sort to ensure parent folders are created first
+        for folder in sorted(folders):
             ensure_folder_exists(dbx, folder)
 
-        # Second pass: Upload files
+        # Upload/copy files
         for item in blob_data:
             try:
                 item_pathname = item['pathname']
                 
-                # Skip if this is just a folder entry (ends with /)
                 if item_pathname.endswith('/') or not Path(item_pathname).name:
                     logger.info(f"Skipping folder entry: {item_pathname}")
                     metrics.skipped_items += 1
                     continue
                 
                 item_url = item['url']
-                
-                # Construct the full Dropbox path
-                dropbox_path = f"{base_path}/{item_pathname}"
-                dropbox_path = dropbox_path.replace('\\', '/').replace('//', '/')
-                
-                # Download the content
+                dropbox_path = f"{base_path}/{item_pathname}".replace('\\', '/').replace('//', '/')
+
+                # Check if file exists in previous backup with same hash
+                if previous_backup_path and item_pathname in previous_hashes:
+                    # First, get the current file's hash from Vercel
+                    content_response = requests.head(item_url)
+                    current_etag = content_response.headers.get('etag', '').strip('"')
+                    
+                    if current_etag and current_etag == previous_hashes[item_pathname]:
+                        # File hasn't changed, copy from previous backup
+                        previous_file_path = f"{previous_backup_path}/{item_pathname}"
+                        if copy_file_between_backups(dbx, previous_file_path, dropbox_path):
+                            logger.info(f"Copied unchanged file from previous backup: {item_pathname}")
+                            file_hashes[item_pathname] = current_etag
+                            metrics.successful_uploads += 1
+                            continue
+
+                # If we get here, either the file is new or changed, download from Vercel
                 content_response = requests.get(item_url)
                 content_response.raise_for_status()
                 content = content_response.content
@@ -243,10 +314,10 @@ def backup_vercel_blob_to_dropbox():
                 
                 metrics.total_bytes += len(content)
                 metrics.successful_uploads += 1
-                logger.info(f"Successfully uploaded: {dropbox_path} (Size: {len(content):,} bytes)")
+                logger.info(f"Downloaded and uploaded new/changed file: {dropbox_path} (Size: {len(content):,} bytes)")
                 
             except Exception as e:
-                logger.error(f"Failed to upload {item_pathname}: {str(e)}")
+                logger.error(f"Failed to process {item_pathname}: {str(e)}")
                 metrics.failed_uploads += 1
 
         # Save backup metadata
@@ -264,7 +335,6 @@ def backup_vercel_blob_to_dropbox():
         logger.info(f"Old backups deleted: {summary['deleted_backups']}")
         logger.info(f"Backup location: {base_path}")
 
-        # Determine final status and include metrics in heartbeat
         status = "fail" if metrics.failed_uploads > 0 else "success"
         ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['total_bytes_transferred']}")
 
