@@ -9,8 +9,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'vfmxvvugriytncpzypvm.supabase.co',
+        protocol: 'http',
+        hostname: process.env.NEXT_PUBLIC_SERVER_URL,
         pathname: '/**',
       },
     ],

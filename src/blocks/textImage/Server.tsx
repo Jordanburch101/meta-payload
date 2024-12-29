@@ -50,7 +50,13 @@ export default function TextImageServer({
             </div>
           </div>
           <div className={`flex justify-center ${imageOrder}`}>
-            <DynamicImage containerClass="aspect-[4/3] overflow-hidden rounded-xl object-cover object-center" url={image.url} alt={image.alt} />
+            <Image 
+              className="aspect-[4/3] overflow-hidden rounded-xl object-cover object-center w-full h-auto" 
+              src={image.url} 
+              alt={image.alt} 
+              width={800}
+              height={600}
+            />
           </div>
         </div>
       </div>
