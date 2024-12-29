@@ -1,12 +1,13 @@
 import os
 import requests
 import dropbox
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 from pathlib import Path
 import time
 import hashlib
 import json
+import re
 
 # Set up logging with more detailed format
 logging.basicConfig(
@@ -22,6 +23,7 @@ class BackupMetrics:
         self.successful_uploads = 0
         self.failed_uploads = 0
         self.skipped_items = 0
+        self.deleted_backups = 0
 
     def get_summary(self):
         duration = time.time() - self.start_time
@@ -32,8 +34,54 @@ class BackupMetrics:
             "successful_uploads": self.successful_uploads,
             "failed_uploads": self.failed_uploads,
             "skipped_items": self.skipped_items,
+            "deleted_backups": self.deleted_backups,
             "average_speed_mbps": round((self.total_bytes * 8) / (duration * 1_000_000), 2) if duration > 0 else 0
         }
+
+def cleanup_old_backups(dbx, metrics, retention_days=30):
+    """Delete backups older than the specified retention period."""
+    try:
+        logger.info(f"Starting cleanup of backups older than {retention_days} days...")
+        
+        # Calculate cutoff date
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        
+        # List all folders in the root directory
+        result = dbx.files_list_folder('')
+        
+        # Pattern to match backup folders and extract their date
+        backup_pattern = re.compile(r'vercel_blob_backup_(\d{8})_(\d{6})')
+        
+        for entry in result.entries:
+            if not isinstance(entry, dropbox.files.FolderMetadata):
+                continue
+                
+            match = backup_pattern.match(entry.name)
+            if not match:
+                continue
+            
+            try:
+                # Parse the date from the folder name
+                folder_date_str = f"{match.group(1)}_{match.group(2)}"
+                folder_date = datetime.strptime(folder_date_str, '%Y%m%d_%H%M%S')
+                folder_date = folder_date.replace(tzinfo=timezone.utc)
+                
+                # Check if this backup is older than our retention period
+                if folder_date < cutoff_date:
+                    logger.info(f"Deleting old backup: {entry.name} (from {folder_date.date()})")
+                    dbx.files_delete_v2(entry.path_display)
+                    metrics.deleted_backups += 1
+                    
+            except ValueError as e:
+                logger.warning(f"Could not parse date from folder name {entry.name}: {e}")
+            except dropbox.exceptions.ApiError as e:
+                logger.error(f"Failed to delete old backup {entry.name}: {e}")
+                
+        logger.info(f"Cleanup completed. Deleted {metrics.deleted_backups} old backups.")
+        
+    except Exception as e:
+        logger.error(f"Error during backup cleanup: {str(e)}")
+        raise
 
 def ping_heartbeat(status="success", extra_params=None):
     """Ping the heartbeat URL with optional status and parameters."""
@@ -116,12 +164,15 @@ def backup_vercel_blob_to_dropbox():
         # Start heartbeat
         ping_heartbeat()
 
-        # Vercel Blob API endpoint
-        vercel_blob_url = "https://api.vercel.com/v1/blob"
-        
         # Dropbox API setup
         dbx = dropbox.Dropbox(os.environ['DROPBOX_ACCESS_TOKEN'])
 
+        # Clean up old backups first
+        cleanup_old_backups(dbx, metrics)
+
+        # Vercel Blob API endpoint
+        vercel_blob_url = "https://api.vercel.com/v1/blob"
+        
         # Fetch data from Vercel Blob
         headers = {
             'Authorization': f'Bearer {os.environ["BLOB_READ_WRITE_TOKEN"]}'
@@ -210,6 +261,7 @@ def backup_vercel_blob_to_dropbox():
         logger.info(f"Successful uploads: {summary['successful_uploads']}")
         logger.info(f"Failed uploads: {summary['failed_uploads']}")
         logger.info(f"Skipped items: {summary['skipped_items']}")
+        logger.info(f"Old backups deleted: {summary['deleted_backups']}")
         logger.info(f"Backup location: {base_path}")
 
         # Determine final status and include metrics in heartbeat
