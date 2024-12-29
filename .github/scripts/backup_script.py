@@ -19,18 +19,31 @@ def sanitize_filename(filename):
 def ensure_folder_exists(dbx, path):
     """Create folder if it doesn't exist."""
     try:
-        path_parts = [p for p in Path(path).parts if p != '/']
-        current_path = ''
-        for part in path_parts:
-            current_path = f"{current_path}/{part}" if current_path else f"/{part}"
-            try:
-                dbx.files_get_metadata(current_path)
-            except dropbox.exceptions.ApiError as e:
-                if isinstance(e.error, dropbox.files.GetMetadataError):
-                    dbx.files_create_folder_v2(current_path)
-                    logger.info(f"Created folder: {current_path}")
+        if not path or path == '/':
+            return
+
+        try:
+            dbx.files_get_metadata(path)
+            return  # Folder exists
+        except dropbox.exceptions.ApiError as e:
+            if not isinstance(e.error, dropbox.files.GetMetadataError):
+                raise
+
+        # If we get here, folder doesn't exist. Create parent first
+        parent = str(Path(path).parent)
+        if parent != path:  # Avoid infinite recursion
+            ensure_folder_exists(dbx, parent)
+
+        try:
+            dbx.files_create_folder_v2(path)
+            logger.info(f"Created folder: {path}")
+        except dropbox.exceptions.ApiError as e:
+            if not isinstance(e.error, dropbox.files.CreateFolderError):
+                raise
+            logger.warning(f"Folder already exists or conflict: {path}")
+
     except Exception as e:
-        logger.error(f"Error creating folder structure: {e}")
+        logger.error(f"Error handling folder {path}: {str(e)}")
 
 def backup_vercel_blob_to_dropbox():
     try:
@@ -60,35 +73,36 @@ def backup_vercel_blob_to_dropbox():
         # Ensure base folder exists
         ensure_folder_exists(dbx, base_path)
         
+        # First pass: Create all necessary folders
+        folders = set()
+        for item in blob_data:
+            path_parts = Path(item['pathname'])
+            current = base_path
+            for part in path_parts.parts[:-1]:  # Exclude filename
+                current = f"{current}/{part}"
+                folders.add(current)
+
+        # Create all folders first
+        for folder in sorted(folders):  # Sort to ensure parent folders are created first
+            ensure_folder_exists(dbx, folder)
+        
         # Track success and failures
         successful_uploads = 0
         failed_uploads = 0
 
-        # Iterate over the blob data and upload each item
+        # Second pass: Upload files
         for item in blob_data:
             try:
                 item_pathname = item['pathname']
                 item_url = item['url']
                 
-                # Split the path into directory and filename
-                path_parts = Path(item_pathname)
-                directory = str(path_parts.parent)
-                filename = sanitize_filename(path_parts.name)
-                
                 # Construct the full Dropbox path
-                if directory == '.':
-                    dropbox_path = f"{base_path}/{filename}"
-                else:
-                    dropbox_path = f"{base_path}/{directory}/{filename}"
-                
-                # Ensure the path starts with a forward slash and normalize it
-                if not dropbox_path.startswith('/'):
-                    dropbox_path = f"/{dropbox_path}"
+                dropbox_path = f"{base_path}/{item_pathname}"
                 dropbox_path = dropbox_path.replace('\\', '/').replace('//', '/')
                 
-                # Ensure the parent folder exists
-                parent_folder = str(Path(dropbox_path).parent)
-                ensure_folder_exists(dbx, parent_folder)
+                # Skip if this is just a folder
+                if not Path(item_pathname).name:
+                    continue
                 
                 # Download the content
                 content_response = requests.get(item_url)
