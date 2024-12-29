@@ -9,13 +9,12 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def sanitize_path(path):
-    """Sanitize the path for Dropbox."""
-    # Replace problematic characters
-    invalid_chars = '<>:"/\\|?*'
+def sanitize_filename(filename):
+    """Sanitize just the filename portion."""
+    invalid_chars = '<>:"|?*'
     for char in invalid_chars:
-        path = path.replace(char, '_')
-    return path.strip()
+        filename = filename.replace(char, '_')
+    return filename.strip()
 
 def ensure_folder_exists(dbx, path):
     """Create folder if it doesn't exist."""
@@ -68,11 +67,24 @@ def backup_vercel_blob_to_dropbox():
         # Iterate over the blob data and upload each item
         for item in blob_data:
             try:
-                item_path = item['pathname']
+                item_pathname = item['pathname']
                 item_url = item['url']
                 
-                # Construct and sanitize the full Dropbox path
-                dropbox_path = sanitize_path(f"{base_path}/{item_path}")
+                # Split the path into directory and filename
+                path_parts = Path(item_pathname)
+                directory = str(path_parts.parent)
+                filename = sanitize_filename(path_parts.name)
+                
+                # Construct the full Dropbox path
+                if directory == '.':
+                    dropbox_path = f"{base_path}/{filename}"
+                else:
+                    dropbox_path = f"{base_path}/{directory}/{filename}"
+                
+                # Ensure the path starts with a forward slash and normalize it
+                if not dropbox_path.startswith('/'):
+                    dropbox_path = f"/{dropbox_path}"
+                dropbox_path = dropbox_path.replace('\\', '/').replace('//', '/')
                 
                 # Ensure the parent folder exists
                 parent_folder = str(Path(dropbox_path).parent)
@@ -89,11 +101,11 @@ def backup_vercel_blob_to_dropbox():
                     mode=dropbox.files.WriteMode.overwrite
                 )
                 
-                logger.info(f"Successfully uploaded: {item_path}")
+                logger.info(f"Successfully uploaded: {dropbox_path}")
                 successful_uploads += 1
                 
             except Exception as e:
-                logger.error(f"Failed to upload {item_path}: {str(e)}")
+                logger.error(f"Failed to upload {item_pathname}: {str(e)}")
                 failed_uploads += 1
 
         # Log summary
