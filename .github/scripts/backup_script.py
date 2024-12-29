@@ -195,23 +195,25 @@ def get_latest_backup_metadata(dbx):
                 metadata_path = f"{latest_backup}/_backup_metadata.json"
                 metadata = json.loads(dbx.files_download(metadata_path)[1].content)
                 logger.info(f"Found previous backup metadata: {latest_backup}")
-                return metadata, latest_backup
+                return metadata.get('file_hashes', {}), latest_backup
             except Exception as e:
                 logger.warning(f"Could not read metadata from latest backup: {e}")
                 
     except Exception as e:
         logger.warning(f"Error finding latest backup: {e}")
     
-    return None, None
+    return {}, None
 
-def copy_file_between_backups(dbx, src_path, dst_path):
-    """Copy a file from one backup location to another."""
-    try:
-        relocation_result = dbx.files_copy_v2(src_path, dst_path)
-        return True
-    except Exception as e:
-        logger.error(f"Failed to copy file from {src_path} to {dst_path}: {e}")
-        return False
+def calculate_file_hash_from_url(url, headers=None):
+    """Calculate hash from a URL without downloading the entire file at once."""
+    response = requests.get(url, headers=headers, stream=True)
+    response.raise_for_status()
+    
+    sha256_hash = hashlib.sha256()
+    for chunk in response.iter_content(chunk_size=8192):
+        sha256_hash.update(chunk)
+    
+    return sha256_hash.hexdigest()
 
 def backup_vercel_blob_to_dropbox():
     metrics = BackupMetrics()
@@ -228,8 +230,9 @@ def backup_vercel_blob_to_dropbox():
         cleanup_old_backups(dbx, metrics)
 
         # Get previous backup metadata
-        previous_metadata, previous_backup_path = get_latest_backup_metadata(dbx)
-        previous_hashes = previous_metadata.get('file_hashes', {}) if previous_metadata else {}
+        previous_hashes, previous_backup_path = get_latest_backup_metadata(dbx)
+        if previous_backup_path:
+            logger.info(f"Found {len(previous_hashes)} files in previous backup")
 
         # Vercel Blob API endpoint
         vercel_blob_url = "https://api.vercel.com/v1/blob"
@@ -281,29 +284,27 @@ def backup_vercel_blob_to_dropbox():
                 item_url = item['url']
                 dropbox_path = f"{base_path}/{item_pathname}".replace('\\', '/').replace('//', '/')
 
+                # Calculate current file hash
+                current_hash = calculate_file_hash_from_url(item_url, headers=headers)
+                file_hashes[item_pathname] = current_hash
+
                 # Check if file exists in previous backup with same hash
                 if previous_backup_path and item_pathname in previous_hashes:
-                    # First, get the current file's hash from Vercel
-                    content_response = requests.head(item_url)
-                    current_etag = content_response.headers.get('etag', '').strip('"')
-                    
-                    if current_etag and current_etag == previous_hashes[item_pathname]:
+                    if current_hash == previous_hashes[item_pathname]:
                         # File hasn't changed, copy from previous backup
                         previous_file_path = f"{previous_backup_path}/{item_pathname}"
-                        if copy_file_between_backups(dbx, previous_file_path, dropbox_path):
+                        try:
+                            dbx.files_copy_v2(previous_file_path, dropbox_path)
                             logger.info(f"Copied unchanged file from previous backup: {item_pathname}")
-                            file_hashes[item_pathname] = current_etag
                             metrics.successful_uploads += 1
                             continue
+                        except dropbox.exceptions.ApiError as e:
+                            logger.warning(f"Failed to copy from previous backup, will download: {e}")
 
-                # If we get here, either the file is new or changed, download from Vercel
+                # If we get here, either the file is new, changed, or copy failed
                 content_response = requests.get(item_url)
                 content_response.raise_for_status()
                 content = content_response.content
-                
-                # Calculate file hash
-                file_hash = calculate_file_hash(content)
-                file_hashes[item_pathname] = file_hash
                 
                 # Upload to Dropbox
                 dbx.files_upload(
