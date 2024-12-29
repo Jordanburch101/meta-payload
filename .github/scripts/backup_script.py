@@ -1,6 +1,7 @@
 import os
 import requests
 import dropbox
+from datetime import datetime
 
 def backup_vercel_blob_to_dropbox():
     # Vercel Blob API endpoint
@@ -16,11 +17,29 @@ def backup_vercel_blob_to_dropbox():
     response = requests.get(vercel_blob_url, headers=headers)
     response.raise_for_status()
 
-    # Save data to Dropbox
-    file_path = '/backup/vercel_blob_backup.json'  # Update with desired Dropbox path
-    dbx.files_upload(response.content, file_path, mode=dropbox.files.WriteMode.overwrite)
+    # Assuming the response contains a list of files and directories
+    blob_data = response.json()
 
-    print(f"Backup successful: {file_path}")
+    # Create a timestamped folder in Dropbox
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    base_path = f'/backup/vercel_blob_backup_{timestamp}'
+
+    # Function to upload files to Dropbox
+    def upload_to_dropbox(path, content):
+        dbx.files_upload(content, path, mode=dropbox.files.WriteMode.overwrite)
+
+    # Iterate over the blob data and upload each item
+    for item in blob_data:
+        item_path = item['path']  # Assuming each item has a 'path' key
+        item_content = requests.get(item['url'], headers=headers).content  # Fetch the content
+
+        # Construct the full Dropbox path
+        dropbox_path = f"{base_path}/{item_path}"
+
+        # Upload the item to Dropbox
+        upload_to_dropbox(dropbox_path, item_content)
+
+    print(f"Backup successful: {base_path}")
 
 if __name__ == "__main__":
     backup_vercel_blob_to_dropbox()
