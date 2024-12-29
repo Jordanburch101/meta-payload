@@ -2,7 +2,6 @@ import os
 import requests
 import dropbox
 from datetime import datetime
-import urllib.parse
 
 def backup_vercel_blob_to_dropbox():
     # Vercel Blob API endpoint
@@ -25,11 +24,11 @@ def backup_vercel_blob_to_dropbox():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     base_path = f'/backup/vercel_blob_backup_{timestamp}'
 
-    # Function to upload files to Dropbox
+    # Function to sanitize and upload files to Dropbox
     def upload_to_dropbox(path, content):
-        # Ensure the path is URL-encoded to handle special characters
-        encoded_path = urllib.parse.quote(path)
-        dbx.files_upload(content, encoded_path, mode=dropbox.files.WriteMode.overwrite)
+        # Sanitize the path to remove or replace invalid characters
+        sanitized_path = path.replace('\\', '_').replace(':', '_').replace('*', '_').replace('?', '_').replace('"', '_').replace('<', '_').replace('>', '_').replace('|', '_')
+        dbx.files_upload(content, sanitized_path, mode=dropbox.files.WriteMode.overwrite)
 
     # Iterate over the blob data and upload each item
     for item in blob_data:
