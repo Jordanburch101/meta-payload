@@ -17,6 +17,9 @@ def backup_vercel_blob_to_dropbox():
     response = requests.get(vercel_blob_url, headers=headers)
     response.raise_for_status()
 
+    # Print the response to understand its structure
+    print(response.json())  # Add this line to inspect the response
+
     # Assuming the response contains a list of files and directories
     blob_data = response.json()
 
@@ -30,8 +33,12 @@ def backup_vercel_blob_to_dropbox():
 
     # Iterate over the blob data and upload each item
     for item in blob_data:
-        item_path = item['path']  # Assuming each item has a 'path' key
-        item_content = requests.get(item['url'], headers=headers).content  # Fetch the content
+        # Debugging: Print each item to understand its structure
+        print(item)  # Add this line to inspect each item
+
+        # Assuming each item has a 'path' and 'url' key
+        item_path = item['path']
+        item_content = requests.get(item['url'], headers=headers).content
 
         # Construct the full Dropbox path
         dropbox_path = f"{base_path}/{item_path}"
