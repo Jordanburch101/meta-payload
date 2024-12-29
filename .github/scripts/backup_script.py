@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 class BackupMetrics:
     def __init__(self):
         self.start_time = time.time()
-        self.total_bytes = 0
-        self.successful_uploads = 0
+        self.total_bytes_downloaded = 0  # Only count bytes actually downloaded
+        self.files_copied = 0  # Files copied from previous backup
+        self.files_downloaded = 0  # Files downloaded from blob
         self.failed_uploads = 0
         self.skipped_items = 0
         self.deleted_backups = 0
@@ -30,12 +31,19 @@ class BackupMetrics:
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_seconds": round(duration, 2),
-            "total_bytes_transferred": self.total_bytes,
-            "successful_uploads": self.successful_uploads,
-            "failed_uploads": self.failed_uploads,
-            "skipped_items": self.skipped_items,
-            "deleted_backups": self.deleted_backups,
-            "average_speed_mbps": round((self.total_bytes * 8) / (duration * 1_000_000), 2) if duration > 0 else 0
+            "files": {
+                "copied_from_previous": self.files_copied,
+                "downloaded_from_blob": self.files_downloaded,
+                "failed": self.failed_uploads,
+                "skipped": self.skipped_items
+            },
+            "data_transfer": {
+                "bytes_downloaded": self.total_bytes_downloaded,
+                "average_speed_mbps": round((self.total_bytes_downloaded * 8) / (duration * 1_000_000), 2) if duration > 0 else 0
+            },
+            "cleanup": {
+                "backups_deleted": self.deleted_backups
+            }
         }
 
 def cleanup_old_backups(dbx, metrics, retention_days=30):
@@ -296,7 +304,7 @@ def backup_vercel_blob_to_dropbox():
                         try:
                             dbx.files_copy_v2(previous_file_path, dropbox_path)
                             logger.info(f"Copied unchanged file from previous backup: {item_pathname}")
-                            metrics.successful_uploads += 1
+                            metrics.files_copied += 1
                             continue
                         except dropbox.exceptions.ApiError as e:
                             logger.warning(f"Failed to copy from previous backup, will download: {e}")
@@ -313,8 +321,8 @@ def backup_vercel_blob_to_dropbox():
                     mode=dropbox.files.WriteMode.overwrite
                 )
                 
-                metrics.total_bytes += len(content)
-                metrics.successful_uploads += 1
+                metrics.total_bytes_downloaded += len(content)
+                metrics.files_downloaded += 1
                 logger.info(f"Downloaded and uploaded new/changed file: {dropbox_path} (Size: {len(content):,} bytes)")
                 
             except Exception as e:
@@ -328,16 +336,18 @@ def backup_vercel_blob_to_dropbox():
         summary = metrics.get_summary()
         logger.info("Backup Summary:")
         logger.info(f"Duration: {summary['duration_seconds']} seconds")
-        logger.info(f"Total data transferred: {summary['total_bytes_transferred']:,} bytes")
-        logger.info(f"Average speed: {summary['average_speed_mbps']} Mbps")
-        logger.info(f"Successful uploads: {summary['successful_uploads']}")
-        logger.info(f"Failed uploads: {summary['failed_uploads']}")
-        logger.info(f"Skipped items: {summary['skipped_items']}")
-        logger.info(f"Old backups deleted: {summary['deleted_backups']}")
+        logger.info(f"Files copied from previous backup: {summary['files']['copied_from_previous']}")
+        logger.info(f"Files downloaded from blob: {summary['files']['downloaded_from_blob']}")
+        logger.info(f"Failed uploads: {summary['files']['failed']}")
+        logger.info(f"Skipped items: {summary['files']['skipped']}")
+        logger.info(f"Data downloaded: {summary['data_transfer']['bytes_downloaded']:,} bytes")
+        logger.info(f"Average download speed: {summary['data_transfer']['average_speed_mbps']} Mbps")
+        logger.info(f"Old backups deleted: {summary['cleanup']['backups_deleted']}")
         logger.info(f"Backup location: {base_path}")
 
+        # Determine final status and include metrics in heartbeat
         status = "fail" if metrics.failed_uploads > 0 else "success"
-        ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['total_bytes_transferred']}")
+        ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['data_transfer']['bytes_downloaded']}")
 
     except Exception as e:
         logger.error(f"Backup failed: {str(e)}")
