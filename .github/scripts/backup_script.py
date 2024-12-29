@@ -9,6 +9,18 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def ping_heartbeat(status="success"):
+    """Ping the heartbeat URL with optional status."""
+    try:
+        heartbeat_url = os.environ.get('HEARTBEAT_URL')
+        if heartbeat_url:
+            if status == "fail":
+                heartbeat_url += "/fail"
+            requests.get(heartbeat_url, timeout=10)
+            logger.info(f"Heartbeat pinged with status: {status}")
+    except Exception as e:
+        logger.error(f"Failed to ping heartbeat: {str(e)}")
+
 def sanitize_filename(filename):
     """Sanitize just the filename portion."""
     invalid_chars = '<>:"|?*'
@@ -47,6 +59,9 @@ def ensure_folder_exists(dbx, path):
 
 def backup_vercel_blob_to_dropbox():
     try:
+        # Start heartbeat
+        ping_heartbeat()
+
         # Vercel Blob API endpoint
         vercel_blob_url = "https://api.vercel.com/v1/blob"
         
@@ -64,6 +79,7 @@ def backup_vercel_blob_to_dropbox():
         blob_data = response.json().get('blobs', [])
         if not blob_data:
             logger.warning("No blobs found to backup")
+            ping_heartbeat()  # Still consider this a success
             return
 
         # Create a timestamped folder in Dropbox
@@ -129,8 +145,15 @@ def backup_vercel_blob_to_dropbox():
         logger.info(f"Backup completed. Success: {successful_uploads}, Failed: {failed_uploads}")
         logger.info(f"Backup location: {base_path}")
 
+        # Determine final status
+        if failed_uploads > 0:
+            ping_heartbeat("fail")
+        else:
+            ping_heartbeat()
+
     except Exception as e:
         logger.error(f"Backup failed: {str(e)}")
+        ping_heartbeat("fail")
         raise
 
 if __name__ == "__main__":
@@ -138,4 +161,5 @@ if __name__ == "__main__":
         backup_vercel_blob_to_dropbox()
     except Exception as e:
         logger.error(f"Script failed: {str(e)}")
+        ping_heartbeat("fail")
         exit(1)
