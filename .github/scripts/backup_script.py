@@ -8,6 +8,7 @@ import time
 import hashlib
 import json
 import re
+from dropbox.oauth import DropboxOAuth2RefreshToken
 
 # Set up logging with more detailed format
 logging.basicConfig(
@@ -223,6 +224,23 @@ def calculate_file_hash_from_url(url, headers=None):
     
     return sha256_hash.hexdigest()
 
+def get_dropbox_client():
+    """Initialize Dropbox client with refresh token authentication."""
+    try:
+        refresh_token = os.environ['DROPBOX_REFRESH_TOKEN']
+        app_key = os.environ['DROPBOX_APP_KEY']
+        app_secret = os.environ['DROPBOX_APP_SECRET']
+        
+        oauth = DropboxOAuth2RefreshToken(
+            app_key,
+            app_secret,
+            refresh_token
+        )
+        return dropbox.Dropbox(oauth=oauth)
+    except Exception as e:
+        logger.error(f"Failed to initialize Dropbox client: {str(e)}")
+        raise
+
 def backup_vercel_blob_to_dropbox():
     metrics = BackupMetrics()
     file_hashes = {}
@@ -231,8 +249,8 @@ def backup_vercel_blob_to_dropbox():
         # Start heartbeat
         ping_heartbeat()
 
-        # Dropbox API setup
-        dbx = dropbox.Dropbox(os.environ['DROPBOX_ACCESS_TOKEN'])
+        # Dropbox API setup with refresh token
+        dbx = get_dropbox_client()
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
