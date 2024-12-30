@@ -11,11 +11,21 @@ import json
 import re
 from dropbox import Dropbox
 from dropbox.oauth import DropboxOAuth2FlowNoRedirect
+import logging.handlers
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-# Set up logging with more detailed format
+# Add log rotation to prevent large log files
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.handlers.RotatingFileHandler(
+            'backup.log',
+            maxBytes=1024*1024,  # 1MB
+            backupCount=5
+        ),
+        logging.StreamHandler()  # Also log to console
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -215,20 +225,28 @@ def get_latest_backup_metadata(dbx):
     
     return {}, None
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def calculate_file_hash_from_url(url, headers=None):
-    """Calculate hash from a URL without downloading the entire file at once."""
-    response = requests.get(url, headers=headers, stream=True)
-    response.raise_for_status()
-    
-    sha256_hash = hashlib.sha256()
-    for chunk in response.iter_content(chunk_size=8192):
-        sha256_hash.update(chunk)
-    
-    return sha256_hash.hexdigest()
+    """Calculate hash from a URL with retry logic for network issues."""
+    try:
+        response = requests.get(url, headers=headers, stream=True, timeout=30)  # Add timeout
+        response.raise_for_status()
+        
+        sha256_hash = hashlib.sha256()
+        for chunk in response.iter_content(chunk_size=8192):
+            sha256_hash.update(chunk)
+        
+        return sha256_hash.hexdigest()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading file from {url}: {e}")
+        raise
 
 def get_dropbox_client():
-    """Initialize Dropbox client with refresh token authentication."""
+    """Initialize Dropbox client with connection timeout."""
     try:
+        # Add timeout configuration
+        timeout = dropbox.Dropbox._TIMEOUT = 100  # seconds
+        
         refresh_token = os.environ['DROPBOX_REFRESH_TOKEN']
         app_key = os.environ['DROPBOX_APP_KEY']
         app_secret = os.environ['DROPBOX_APP_SECRET']
@@ -244,7 +262,8 @@ def get_dropbox_client():
                 'files.content.read',
                 'files.content.write',
                 'account_info.read'
-            ]
+            ],
+            timeout=timeout
         )
         
         # Test the connection
@@ -370,6 +389,12 @@ def backup_vercel_blob_to_dropbox():
     file_hashes = {}
 
     try:
+        # Add connection pooling for requests
+        session = requests.Session()
+        
+        # Add chunk size configuration
+        CHUNK_SIZE = 1024 * 1024  # 1MB chunks for better memory management
+        
         # Start heartbeat
         ping_heartbeat()
 
@@ -452,16 +477,44 @@ def backup_vercel_blob_to_dropbox():
                             logger.warning(f"Failed to copy from previous backup, will download: {e}")
 
                 # If we get here, either the file is new, changed, or copy failed
-                content_response = requests.get(item_url)
+                content_response = session.get(item_url, stream=True)
                 content_response.raise_for_status()
-                content = content_response.content
                 
-                # Upload to Dropbox
-                dbx.files_upload(
-                    content,
-                    dropbox_path,
-                    mode=dropbox.files.WriteMode.overwrite
-                )
+                file_size = int(content_response.headers.get('content-length', 0))
+                
+                if file_size > 150 * 1024 * 1024:  # 150MB
+                    # Use chunked upload for large files
+                    upload_session = dbx.files_upload_session_start(b'')
+                    cursor = dropbox.files.UploadSessionCursor(
+                        session_id=upload_session.session_id,
+                        offset=0
+                    )
+                    
+                    for chunk in content_response.iter_content(chunk_size=CHUNK_SIZE):
+                        if cursor.offset + len(chunk) < file_size:
+                            dbx.files_upload_session_append_v2(
+                                chunk,
+                                cursor
+                            )
+                            cursor.offset += len(chunk)
+                        else:
+                            commit = dropbox.files.CommitInfo(
+                                path=dropbox_path,
+                                mode=dropbox.files.WriteMode.overwrite
+                            )
+                            dbx.files_upload_session_finish(
+                                chunk,
+                                cursor,
+                                commit
+                            )
+                else:
+                    # Use regular upload for smaller files
+                    content = content_response.content
+                    dbx.files_upload(
+                        content,
+                        dropbox_path,
+                        mode=dropbox.files.WriteMode.overwrite
+                    )
                 
                 metrics.total_bytes_downloaded += len(content)
                 metrics.files_downloaded += 1
