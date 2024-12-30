@@ -263,36 +263,72 @@ def get_dropbox_client():
 def copy_file_from_previous_backup(dbx, src_path, dst_path):
     """Attempt to copy a file from previous backup with conflict handling."""
     try:
-        logger.info(f"Attempting to copy {src_path} to {dst_path}")
+        # First, check if the destination file already exists
+        try:
+            dbx.files_get_metadata(dst_path)
+            logger.info(f"File already exists at {dst_path}, skipping copy")
+            return False
+        except dropbox.exceptions.ApiError as e:
+            if not isinstance(e.error, dropbox.files.GetMetadataError):
+                raise
+
+        # If we get here, the file doesn't exist at the destination
+        logger.info(f"Copying {src_path} to {dst_path}")
         dbx.files_copy_v2(
             from_path=src_path,
             to_path=dst_path,
-            allow_ownership_transfer=True,
-            autorename=True  # Add this to handle conflicts
+            allow_ownership_transfer=True
         )
         return True
+        
     except dropbox.exceptions.ApiError as e:
+        error_details = str(e)
+        logger.warning(f"Detailed copy error: {error_details}")
+        
+        # If it's a conflict error, try to delete the destination first
         if (isinstance(e.error, dropbox.files.RelocationError) and
             isinstance(e.error.get_to(), dropbox.files.WriteError) and
             isinstance(e.error.get_to().reason, dropbox.files.WriteConflictError)):
-            logger.info(f"File already exists at {dst_path}, skipping copy")
-            return False
-        else:
-            logger.warning(f"Failed to copy from previous backup: {e}")
-            return False
+            
+            try:
+                logger.info(f"Attempting to delete existing file at {dst_path}")
+                dbx.files_delete_v2(dst_path)
+                
+                # Try the copy again
+                dbx.files_copy_v2(
+                    from_path=src_path,
+                    to_path=dst_path,
+                    allow_ownership_transfer=True
+                )
+                logger.info(f"Successfully copied file after deletion: {dst_path}")
+                return True
+                
+            except Exception as delete_error:
+                logger.warning(f"Failed to handle conflict for {dst_path}: {delete_error}")
+                return False
+        
+        logger.warning(f"Failed to copy from previous backup: {e}")
+        return False
 
 def upload_file(dbx, file_path, dropbox_path):
     """Upload a file with conflict handling."""
     try:
-        mode = dropbox.files.WriteMode.overwrite  # or use .add to prevent overwrites
+        # First try to delete any existing file
+        try:
+            dbx.files_delete_v2(dropbox_path)
+            logger.info(f"Deleted existing file at {dropbox_path}")
+        except dropbox.exceptions.ApiError:
+            pass  # File doesn't exist, which is fine
+        
+        # Now upload the new file
         with open(file_path, 'rb') as f:
             dbx.files_upload(
                 f.read(),
                 dropbox_path,
-                mode=mode,
-                autorename=True  # Add this to handle conflicts
+                mode=dropbox.files.WriteMode('overwrite')
             )
         logger.info(f"Successfully uploaded {file_path} to {dropbox_path}")
+        
     except Exception as e:
         logger.error(f"Failed to upload {file_path}: {e}")
         raise
