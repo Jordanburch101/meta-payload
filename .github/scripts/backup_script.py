@@ -1,6 +1,7 @@
 import os
 import requests
 import dropbox
+from dropbox.exceptions import ApiError
 from datetime import datetime, timezone, timedelta
 import logging
 from pathlib import Path
@@ -233,10 +234,10 @@ def get_dropbox_client():
         app_secret = os.environ['DROPBOX_APP_SECRET']
         
         # Initialize Dropbox client with refresh token
-        return Dropbox(
-            oauth2_access_token=refresh_token,
+        return dropbox.Dropbox(
             oauth2_refresh_token=refresh_token,
-            app_key=app_key
+            app_key=app_key,
+            app_secret=app_secret
         )
     except Exception as e:
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
