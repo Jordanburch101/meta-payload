@@ -15,6 +15,7 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
     "@payloadcms/db-sqlite": "3.9.0",
     "@payloadcms/email-resend": "3.9.0",
     "@payloadcms/live-preview-react": "3.9.0",
@@ -25,7 +26,7 @@
     "@payloadcms/plugin-sentry": "3.9.0",
     "@payloadcms/plugin-seo": "3.9.0",
     "@payloadcms/richtext-lexical": "3.9.0",
-    "@payloadcms/storage-s3": "3.9.0",
+    "@payloadcms/storage-vercel-blob": "3.9.0",
     "@payloadcms/ui": "3.9.0",
     "@plaiceholder/next": "^3.0.0",
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -49,7 +50,6 @@
     "jsonwebtoken": "^9.0.2",
     "ldrs": "^1.0.2",
     "libsql": "^0.4.6",
-    "@libsql/client": "^0.14.0",
     "lucide-react": "^0.454.0",
     "next": "15.1.0",
     "payload": "3.9.0",

@@ -1,6 +1,7 @@
 import os
 import requests
 import dropbox
+from dropbox.exceptions import ApiError, AuthError
 from datetime import datetime, timezone, timedelta
 import logging
 from pathlib import Path
@@ -8,11 +9,23 @@ import time
 import hashlib
 import json
 import re
+from dropbox import Dropbox
+from dropbox.oauth import DropboxOAuth2FlowNoRedirect
+import logging.handlers
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-# Set up logging with more detailed format
+# Add log rotation to prevent large log files
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.handlers.RotatingFileHandler(
+            'backup.log',
+            maxBytes=1024*1024,  # 1MB
+            backupCount=5
+        ),
+        logging.StreamHandler()  # Also log to console
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -212,27 +225,181 @@ def get_latest_backup_metadata(dbx):
     
     return {}, None
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def calculate_file_hash_from_url(url, headers=None):
-    """Calculate hash from a URL without downloading the entire file at once."""
-    response = requests.get(url, headers=headers, stream=True)
-    response.raise_for_status()
-    
-    sha256_hash = hashlib.sha256()
-    for chunk in response.iter_content(chunk_size=8192):
-        sha256_hash.update(chunk)
-    
-    return sha256_hash.hexdigest()
+    """Calculate hash from a URL with retry logic for network issues."""
+    try:
+        response = requests.get(url, headers=headers, stream=True, timeout=30)  # Add timeout
+        response.raise_for_status()
+        
+        sha256_hash = hashlib.sha256()
+        for chunk in response.iter_content(chunk_size=8192):
+            sha256_hash.update(chunk)
+        
+        return sha256_hash.hexdigest()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading file from {url}: {e}")
+        raise
+
+def get_dropbox_client():
+    """Initialize Dropbox client with connection timeout."""
+    try:
+        # Add timeout configuration
+        timeout = dropbox.Dropbox._TIMEOUT = 100  # seconds
+        
+        refresh_token = os.environ['DROPBOX_REFRESH_TOKEN']
+        app_key = os.environ['DROPBOX_APP_KEY']
+        app_secret = os.environ['DROPBOX_APP_SECRET']
+        
+        # Initialize Dropbox client with refresh token and all required scopes
+        dbx = dropbox.Dropbox(
+            app_key=app_key,
+            app_secret=app_secret,
+            oauth2_refresh_token=refresh_token,
+            scope=[
+                'files.metadata.read',
+                'files.metadata.write',
+                'files.content.read',
+                'files.content.write',
+                'account_info.read'
+            ],
+            timeout=timeout
+        )
+        
+        # Test the connection
+        try:
+            dbx.users_get_current_account()
+            logger.info("Successfully connected to Dropbox")
+            return dbx
+        except AuthError as e:
+            logger.error(f"Error authenticating with Dropbox: {str(e)}")
+            raise
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize Dropbox client: {str(e)}")
+        raise
+
+def copy_file_from_previous_backup(dbx, src_path, dst_path):
+    """Attempt to copy a file from previous backup with conflict handling."""
+    try:
+        # First, check if the destination file already exists
+        try:
+            dbx.files_get_metadata(dst_path)
+            logger.info(f"File already exists at {dst_path}, skipping copy")
+            return False
+        except dropbox.exceptions.ApiError as e:
+            if not isinstance(e.error, dropbox.files.GetMetadataError):
+                raise
+
+        # If we get here, the file doesn't exist at the destination
+        logger.info(f"Copying {src_path} to {dst_path}")
+        dbx.files_copy_v2(
+            from_path=src_path,
+            to_path=dst_path,
+            allow_ownership_transfer=True
+        )
+        return True
+        
+    except dropbox.exceptions.ApiError as e:
+        error_details = str(e)
+        logger.warning(f"Detailed copy error: {error_details}")
+        
+        # If it's a conflict error, try to delete the destination first
+        if (isinstance(e.error, dropbox.files.RelocationError) and
+            isinstance(e.error.get_to(), dropbox.files.WriteError) and
+            isinstance(e.error.get_to().reason, dropbox.files.WriteConflictError)):
+            
+            try:
+                logger.info(f"Attempting to delete existing file at {dst_path}")
+                dbx.files_delete_v2(dst_path)
+                
+                # Try the copy again
+                dbx.files_copy_v2(
+                    from_path=src_path,
+                    to_path=dst_path,
+                    allow_ownership_transfer=True
+                )
+                logger.info(f"Successfully copied file after deletion: {dst_path}")
+                return True
+                
+            except Exception as delete_error:
+                logger.warning(f"Failed to handle conflict for {dst_path}: {delete_error}")
+                return False
+        
+        logger.warning(f"Failed to copy from previous backup: {e}")
+        return False
+
+def upload_file(dbx, file_path, dropbox_path):
+    """Upload a file with conflict handling."""
+    try:
+        # First try to delete any existing file
+        try:
+            dbx.files_delete_v2(dropbox_path)
+            logger.info(f"Deleted existing file at {dropbox_path}")
+        except dropbox.exceptions.ApiError:
+            pass  # File doesn't exist, which is fine
+        
+        # Now upload the new file
+        with open(file_path, 'rb') as f:
+            dbx.files_upload(
+                f.read(),
+                dropbox_path,
+                mode=dropbox.files.WriteMode('overwrite')
+            )
+        logger.info(f"Successfully uploaded {file_path} to {dropbox_path}")
+        
+    except Exception as e:
+        logger.error(f"Failed to upload {file_path}: {e}")
+        raise
+
+def cleanup_duplicates(dbx, backup_folder):
+    """Clean up duplicate files in the backup folder."""
+    try:
+        result = dbx.files_list_folder(backup_folder, recursive=True)
+        files = {}  # Dictionary to store filename -> path mapping
+        
+        # Find duplicates
+        for entry in result.entries:
+            if isinstance(entry, dropbox.files.FileMetadata):
+                base_name = entry.name.split(' (')[0]  # Remove the (1), (2) etc.
+                if base_name in files:
+                    # Keep the newer file
+                    if entry.server_modified > files[base_name]['modified']:
+                        # Delete the older file
+                        dbx.files_delete_v2(files[base_name]['path'])
+                        files[base_name] = {
+                            'path': entry.path_display,
+                            'modified': entry.server_modified
+                        }
+                    else:
+                        # Delete the current file
+                        dbx.files_delete_v2(entry.path_display)
+                else:
+                    files[base_name] = {
+                        'path': entry.path_display,
+                        'modified': entry.server_modified
+                    }
+        
+        logger.info(f"Cleanup completed for {backup_folder}")
+    except Exception as e:
+        logger.warning(f"Error during cleanup: {e}")
 
 def backup_vercel_blob_to_dropbox():
     metrics = BackupMetrics()
     file_hashes = {}
 
     try:
+        # Add connection pooling for requests
+        session = requests.Session()
+        
+        # Add chunk size configuration
+        CHUNK_SIZE = 1024 * 1024  # 1MB chunks for better memory management
+        
         # Start heartbeat
         ping_heartbeat()
 
-        # Dropbox API setup
-        dbx = dropbox.Dropbox(os.environ['DROPBOX_ACCESS_TOKEN'])
+        # Dropbox API setup with refresh token
+        dbx = get_dropbox_client()
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
@@ -310,16 +477,44 @@ def backup_vercel_blob_to_dropbox():
                             logger.warning(f"Failed to copy from previous backup, will download: {e}")
 
                 # If we get here, either the file is new, changed, or copy failed
-                content_response = requests.get(item_url)
+                content_response = session.get(item_url, stream=True)
                 content_response.raise_for_status()
-                content = content_response.content
                 
-                # Upload to Dropbox
-                dbx.files_upload(
-                    content,
-                    dropbox_path,
-                    mode=dropbox.files.WriteMode.overwrite
-                )
+                file_size = int(content_response.headers.get('content-length', 0))
+                
+                if file_size > 150 * 1024 * 1024:  # 150MB
+                    # Use chunked upload for large files
+                    upload_session = dbx.files_upload_session_start(b'')
+                    cursor = dropbox.files.UploadSessionCursor(
+                        session_id=upload_session.session_id,
+                        offset=0
+                    )
+                    
+                    for chunk in content_response.iter_content(chunk_size=CHUNK_SIZE):
+                        if cursor.offset + len(chunk) < file_size:
+                            dbx.files_upload_session_append_v2(
+                                chunk,
+                                cursor
+                            )
+                            cursor.offset += len(chunk)
+                        else:
+                            commit = dropbox.files.CommitInfo(
+                                path=dropbox_path,
+                                mode=dropbox.files.WriteMode.overwrite
+                            )
+                            dbx.files_upload_session_finish(
+                                chunk,
+                                cursor,
+                                commit
+                            )
+                else:
+                    # Use regular upload for smaller files
+                    content = content_response.content
+                    dbx.files_upload(
+                        content,
+                        dropbox_path,
+                        mode=dropbox.files.WriteMode.overwrite
+                    )
                 
                 metrics.total_bytes_downloaded += len(content)
                 metrics.files_downloaded += 1
@@ -348,6 +543,10 @@ def backup_vercel_blob_to_dropbox():
         # Determine final status and include metrics in heartbeat
         status = "fail" if metrics.failed_uploads > 0 else "success"
         ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['data_transfer']['bytes_downloaded']}")
+
+        # Add cleanup at the end
+        backup_folder = f"/vercel_blob_backup_{timestamp}"
+        cleanup_duplicates(dbx, backup_folder)
 
     except Exception as e:
         logger.error(f"Backup failed: {str(e)}")
