@@ -234,7 +234,7 @@ def get_dropbox_client():
         
         # Initialize Dropbox client with refresh token
         return Dropbox(
-            oauth2_refresh_token=refresh_token,
+            refresh_token,
             app_key=app_key,
             app_secret=app_secret
         )
