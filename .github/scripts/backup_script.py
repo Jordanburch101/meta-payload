@@ -9,7 +9,7 @@ import hashlib
 import json
 import re
 from dropbox import Dropbox
-from dropbox.oauth import OAuth2FlowNoRedirect
+from dropbox.oauth import DropboxOAuth2FlowNoRedirect
 
 # Set up logging with more detailed format
 logging.basicConfig(
@@ -234,9 +234,9 @@ def get_dropbox_client():
         
         # Initialize Dropbox client with refresh token
         return Dropbox(
-            refresh_token,
-            app_key=app_key,
-            app_secret=app_secret
+            oauth2_access_token=refresh_token,
+            oauth2_refresh_token=refresh_token,
+            app_key=app_key
         )
     except Exception as e:
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
