@@ -233,13 +233,18 @@ def get_dropbox_client():
         app_key = os.environ['DROPBOX_APP_KEY']
         app_secret = os.environ['DROPBOX_APP_SECRET']
         
-        # Initialize Dropbox client with refresh token and specific scopes
+        # Initialize Dropbox client with refresh token and all required scopes
         dbx = dropbox.Dropbox(
             app_key=app_key,
             app_secret=app_secret,
             oauth2_refresh_token=refresh_token,
-            scope=['files.metadata.read', 'files.metadata.write', 
-                   'files.content.read', 'files.content.write']
+            scope=[
+                'files.metadata.read',
+                'files.metadata.write',
+                'files.content.read',
+                'files.content.write',
+                'account_info.read'
+            ]
         )
         
         # Test the connection
