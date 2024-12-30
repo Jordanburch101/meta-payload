@@ -8,7 +8,8 @@ import time
 import hashlib
 import json
 import re
-from dropbox.oauth import DropboxOAuth2RefreshToken
+from dropbox import Dropbox
+from dropbox import DropboxOAuth2
 
 # Set up logging with more detailed format
 logging.basicConfig(
@@ -231,12 +232,16 @@ def get_dropbox_client():
         app_key = os.environ['DROPBOX_APP_KEY']
         app_secret = os.environ['DROPBOX_APP_SECRET']
         
-        oauth = DropboxOAuth2RefreshToken(
+        # Create OAuth2 credentials object
+        oauth2 = DropboxOAuth2(
             app_key,
             app_secret,
-            refresh_token
+            refresh_token,
+            token_access_type='offline'
         )
-        return dropbox.Dropbox(oauth=oauth)
+        
+        # Initialize Dropbox client with OAuth2 credentials
+        return Dropbox(oauth2=oauth2)
     except Exception as e:
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
         raise
