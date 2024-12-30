@@ -1,7 +1,7 @@
 import os
 import requests
 import dropbox
-from dropbox.exceptions import ApiError
+from dropbox.exceptions import ApiError, AuthError
 from datetime import datetime, timezone, timedelta
 import logging
 from pathlib import Path
@@ -233,12 +233,24 @@ def get_dropbox_client():
         app_key = os.environ['DROPBOX_APP_KEY']
         app_secret = os.environ['DROPBOX_APP_SECRET']
         
-        # Initialize Dropbox client with refresh token
-        return dropbox.Dropbox(
-            oauth2_refresh_token=refresh_token,
+        # Initialize Dropbox client with refresh token and specific scopes
+        dbx = dropbox.Dropbox(
             app_key=app_key,
-            app_secret=app_secret
+            app_secret=app_secret,
+            oauth2_refresh_token=refresh_token,
+            scope=['files.metadata.read', 'files.metadata.write', 
+                   'files.content.read', 'files.content.write']
         )
+        
+        # Test the connection
+        try:
+            dbx.users_get_current_account()
+            logger.info("Successfully connected to Dropbox")
+            return dbx
+        except AuthError as e:
+            logger.error(f"Error authenticating with Dropbox: {str(e)}")
+            raise
+            
     except Exception as e:
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
         raise
