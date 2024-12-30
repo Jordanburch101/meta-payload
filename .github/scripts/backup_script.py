@@ -260,6 +260,75 @@ def get_dropbox_client():
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
         raise
 
+def copy_file_from_previous_backup(dbx, src_path, dst_path):
+    """Attempt to copy a file from previous backup with conflict handling."""
+    try:
+        logger.info(f"Attempting to copy {src_path} to {dst_path}")
+        dbx.files_copy_v2(
+            from_path=src_path,
+            to_path=dst_path,
+            allow_ownership_transfer=True,
+            autorename=True  # Add this to handle conflicts
+        )
+        return True
+    except dropbox.exceptions.ApiError as e:
+        if (isinstance(e.error, dropbox.files.RelocationError) and
+            isinstance(e.error.get_to(), dropbox.files.WriteError) and
+            isinstance(e.error.get_to().reason, dropbox.files.WriteConflictError)):
+            logger.info(f"File already exists at {dst_path}, skipping copy")
+            return False
+        else:
+            logger.warning(f"Failed to copy from previous backup: {e}")
+            return False
+
+def upload_file(dbx, file_path, dropbox_path):
+    """Upload a file with conflict handling."""
+    try:
+        mode = dropbox.files.WriteMode.overwrite  # or use .add to prevent overwrites
+        with open(file_path, 'rb') as f:
+            dbx.files_upload(
+                f.read(),
+                dropbox_path,
+                mode=mode,
+                autorename=True  # Add this to handle conflicts
+            )
+        logger.info(f"Successfully uploaded {file_path} to {dropbox_path}")
+    except Exception as e:
+        logger.error(f"Failed to upload {file_path}: {e}")
+        raise
+
+def cleanup_duplicates(dbx, backup_folder):
+    """Clean up duplicate files in the backup folder."""
+    try:
+        result = dbx.files_list_folder(backup_folder, recursive=True)
+        files = {}  # Dictionary to store filename -> path mapping
+        
+        # Find duplicates
+        for entry in result.entries:
+            if isinstance(entry, dropbox.files.FileMetadata):
+                base_name = entry.name.split(' (')[0]  # Remove the (1), (2) etc.
+                if base_name in files:
+                    # Keep the newer file
+                    if entry.server_modified > files[base_name]['modified']:
+                        # Delete the older file
+                        dbx.files_delete_v2(files[base_name]['path'])
+                        files[base_name] = {
+                            'path': entry.path_display,
+                            'modified': entry.server_modified
+                        }
+                    else:
+                        # Delete the current file
+                        dbx.files_delete_v2(entry.path_display)
+                else:
+                    files[base_name] = {
+                        'path': entry.path_display,
+                        'modified': entry.server_modified
+                    }
+        
+        logger.info(f"Cleanup completed for {backup_folder}")
+    except Exception as e:
+        logger.warning(f"Error during cleanup: {e}")
+
 def backup_vercel_blob_to_dropbox():
     metrics = BackupMetrics()
     file_hashes = {}
@@ -385,6 +454,10 @@ def backup_vercel_blob_to_dropbox():
         # Determine final status and include metrics in heartbeat
         status = "fail" if metrics.failed_uploads > 0 else "success"
         ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['data_transfer']['bytes_downloaded']}")
+
+        # Add cleanup at the end
+        backup_folder = f"/vercel_blob_backup_{timestamp}"
+        cleanup_duplicates(dbx, backup_folder)
 
     except Exception as e:
         logger.error(f"Backup failed: {str(e)}")
