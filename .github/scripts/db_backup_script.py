@@ -209,7 +209,11 @@ async def backup_database():
                     f.write(f"-- Generated: {datetime.now(timezone.utc).isoformat()}\n\n")
                     f.write("BEGIN TRANSACTION;\n\n")
 
+                    logger.info(f"Found {len(tables)} tables to backup")
+                    
                     for table in tables:
+                        logger.info(f"Processing table: {table}")
+                        
                         # Get table schema
                         schema_result = await client.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [table])
                         create_table_sql = schema_result.rows[0][0]
@@ -217,7 +221,10 @@ async def backup_database():
 
                         # Get table data
                         data_result = await client.execute(f"SELECT * FROM {table}")
-                        for row in data_result.rows:
+                        row_count = len(data_result.rows)
+                        logger.info(f"Writing {row_count} rows for table {table}")
+                        
+                        for i, row in enumerate(data_result.rows, 1):
                             values = []
                             for v in row:
                                 if v is None:
@@ -225,8 +232,13 @@ async def backup_database():
                                 else:
                                     values.append("'" + str(v).replace("'", "''") + "'")
                             f.write(f"INSERT INTO {table} VALUES ({', '.join(values)});\n")
+                            
+                            # Log progress for large tables
+                            if row_count > 1000 and i % 1000 == 0:
+                                logger.info(f"Progress for {table}: {i}/{row_count} rows ({(i/row_count)*100:.1f}%)")
                     
                     f.write("\nCOMMIT;\n")
+                    logger.info("Database dump completed successfully")
 
                 # Get file size
                 file_size = os.path.getsize(temp_path)
