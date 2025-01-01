@@ -64,14 +64,20 @@ def cleanup_old_backups(dbx, metrics, retention_days=30):
     try:
         logger.info(f"Starting cleanup of backups older than {retention_days} days...")
         
+        # Ensure backup folder exists
+        backup_folder = '/blob_backups'
+        if not ensure_folder_exists(dbx, backup_folder):
+            logger.warning("Could not create backup folder, skipping cleanup")
+            return
+        
         # Calculate cutoff date
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
         
-        # List all folders in the root directory
-        result = dbx.files_list_folder('')
+        # List all folders in the backup directory
+        result = dbx.files_list_folder(backup_folder)
         
         # Pattern to match backup folders and extract their date
-        backup_pattern = re.compile(r'vercel_blob_backup_(\d{8})_(\d{6})')
+        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})')
         
         for entry in result.entries:
             if not isinstance(entry, dropbox.files.FolderMetadata):
@@ -95,8 +101,6 @@ def cleanup_old_backups(dbx, metrics, retention_days=30):
                     
             except ValueError as e:
                 logger.warning(f"Could not parse date from folder name {entry.name}: {e}")
-            except dropbox.exceptions.ApiError as e:
-                logger.error(f"Failed to delete old backup {entry.name}: {e}")
                 
         logger.info(f"Cleanup completed. Deleted {metrics.deleted_backups} old backups.")
         
@@ -180,11 +184,16 @@ def save_backup_metadata(dbx, base_path, metrics, file_hashes):
 def get_latest_backup_metadata(dbx):
     """Find and retrieve metadata from the most recent backup."""
     try:
-        # List all folders in root
-        result = dbx.files_list_folder('')
+        # List all folders in backup folder
+        backup_folder = '/blob_backups'
+        if not ensure_folder_exists(dbx, backup_folder):
+            logger.warning("Could not access backup folder")
+            return {}, None
+            
+        result = dbx.files_list_folder(backup_folder)
         
         # Pattern to match backup folders and extract their date
-        backup_pattern = re.compile(r'vercel_blob_backup_(\d{8})_(\d{6})')
+        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})')
         
         # Find the most recent backup folder
         latest_backup = None
@@ -392,14 +401,17 @@ def backup_vercel_blob_to_dropbox():
         # Add connection pooling for requests
         session = requests.Session()
         
-        # Add chunk size configuration
-        CHUNK_SIZE = 1024 * 1024  # 1MB chunks for better memory management
-        
         # Start heartbeat
         ping_heartbeat()
 
         # Dropbox API setup with refresh token
         dbx = get_dropbox_client()
+
+        # Ensure base backup folder exists
+        backup_folder = '/blob_backups'
+        if not ensure_folder_exists(dbx, backup_folder):
+            logger.error("Could not create base backup folder")
+            raise Exception("Failed to create base backup folder")
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
@@ -408,6 +420,13 @@ def backup_vercel_blob_to_dropbox():
         previous_hashes, previous_backup_path = get_latest_backup_metadata(dbx)
         if previous_backup_path:
             logger.info(f"Found {len(previous_hashes)} files in previous backup")
+
+        # Create a timestamped folder in Dropbox
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        base_path = f'{backup_folder}/backup_{timestamp}'
+        
+        # Ensure backup folder exists
+        ensure_folder_exists(dbx, base_path)
 
         # Vercel Blob API endpoint
         vercel_blob_url = "https://api.vercel.com/v1/blob"
@@ -426,13 +445,6 @@ def backup_vercel_blob_to_dropbox():
             ping_heartbeat()
             return
 
-        # Create a timestamped folder in Dropbox
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-        base_path = f'/vercel_blob_backup_{timestamp}'
-        
-        # Ensure base folder exists
-        ensure_folder_exists(dbx, base_path)
-        
         # Create folder structure
         folders = set()
         for item in blob_data:

@@ -30,4 +30,4 @@ jobs:
         DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
         DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
         HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
-      run: python .github/scripts/backup_script.py
+      run: python .github/scripts/blob_backup_script.py
