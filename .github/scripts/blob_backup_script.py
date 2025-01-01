@@ -136,30 +136,29 @@ def ensure_folder_exists(dbx, path):
     """Create folder if it doesn't exist."""
     try:
         if not path or path == '/':
-            return
+            return True
 
         try:
             dbx.files_get_metadata(path)
-            return  # Folder exists
+            logger.info(f"Folder exists: {path}")
+            return True
         except dropbox.exceptions.ApiError as e:
             if not isinstance(e.error, dropbox.files.GetMetadataError):
                 raise
+            
+            # Create parent folder first if needed
+            parent = str(Path(path).parent)
+            if parent != path:  # Avoid infinite recursion
+                ensure_folder_exists(dbx, parent)
 
-        # If we get here, folder doesn't exist. Create parent first
-        parent = str(Path(path).parent)
-        if parent != path:  # Avoid infinite recursion
-            ensure_folder_exists(dbx, parent)
-
-        try:
+            # Folder doesn't exist, create it
             dbx.files_create_folder_v2(path)
             logger.info(f"Created folder: {path}")
-        except dropbox.exceptions.ApiError as e:
-            if not isinstance(e.error, dropbox.files.CreateFolderError):
-                raise
-            logger.warning(f"Folder already exists or conflict: {path}")
-
+            return True
+            
     except Exception as e:
         logger.error(f"Error handling folder {path}: {str(e)}")
+        return False
 
 def save_backup_metadata(dbx, base_path, metrics, file_hashes):
     """Save backup metadata to Dropbox."""
@@ -410,8 +409,8 @@ def backup_vercel_blob_to_dropbox():
         # Ensure base backup folder exists
         backup_folder = '/blob_backups'
         if not ensure_folder_exists(dbx, backup_folder):
-            logger.error("Could not create base backup folder")
-            raise Exception("Failed to create base backup folder")
+            logger.error("Could not create or access base backup folder")
+            raise Exception("Failed to create or access base backup folder")
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
