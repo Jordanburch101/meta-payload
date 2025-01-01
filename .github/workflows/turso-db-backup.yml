@@ -1,0 +1,34 @@
+name: Turso Database to Dropbox Backup
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # Runs every day at 1 AM (offset from blob backup)
+  workflow_dispatch:     # Allows manual triggering
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests "dropbox>=11.32.0" tenacity>=8.0.0 libsql-client
+
+    - name: Run backup script
+      env:
+        TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+        TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+        DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+        DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+        HEARTBEAT_URL: ${{ secrets.DB_HEARTBEAT_URL }}
+      run: python .github/scripts/db_backup_script.py 
