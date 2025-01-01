@@ -204,10 +204,11 @@ async def backup_database():
 
                 # Write schema and data for each table
                 with open(temp_path, 'w', encoding='utf-8') as f:
-                    # Write header
+                    # Write header with more detailed information
                     f.write("-- Turso Database Backup\n")
-                    f.write(f"-- Generated: {datetime.now(timezone.utc).isoformat()}\n\n")
-                    f.write("BEGIN TRANSACTION;\n\n")
+                    f.write(f"-- Generated: {datetime.now(timezone.utc).isoformat()}\n")
+                    f.write(f"-- Database URL: {os.environ['TURSO_DATABASE_URL']}\n")
+                    f.write("\nBEGIN TRANSACTION;\n\n")
 
                     logger.info(f"Found {len(tables)} tables to backup")
                     
@@ -217,12 +218,16 @@ async def backup_database():
                         # Get table schema
                         schema_result = await client.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [table])
                         create_table_sql = schema_result.rows[0][0]
+                        f.write(f"\n-- Table structure for {table}\n")
                         f.write(f"{create_table_sql};\n")
 
                         # Get table data
                         data_result = await client.execute(f"SELECT * FROM {table}")
                         row_count = len(data_result.rows)
                         logger.info(f"Writing {row_count} rows for table {table}")
+                        
+                        if row_count > 0:
+                            f.write(f"\n-- Data for table {table}\n")
                         
                         for i, row in enumerate(data_result.rows, 1):
                             values = []
@@ -236,6 +241,10 @@ async def backup_database():
                             # Log progress for large tables
                             if row_count > 1000 and i % 1000 == 0:
                                 logger.info(f"Progress for {table}: {i}/{row_count} rows ({(i/row_count)*100:.1f}%)")
+                                
+                            # Add occasional transaction commits for very large tables
+                            if i % 10000 == 0:
+                                f.write("COMMIT;\nBEGIN TRANSACTION;\n")
                     
                     f.write("\nCOMMIT;\n")
                     logger.info("Database dump completed successfully")
