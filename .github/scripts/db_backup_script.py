@@ -76,13 +76,39 @@ def get_dropbox_client():
         logger.error(f"Failed to initialize Dropbox client: {str(e)}")
         raise
 
+def ensure_folder_exists(dbx, path):
+    """Create folder if it doesn't exist."""
+    try:
+        try:
+            dbx.files_get_metadata(path)
+            logger.info(f"Folder exists: {path}")
+            return True
+        except dropbox.exceptions.ApiError as e:
+            if not isinstance(e.error, dropbox.files.GetMetadataError):
+                raise
+            
+            # Folder doesn't exist, create it
+            dbx.files_create_folder_v2(path)
+            logger.info(f"Created folder: {path}")
+            return True
+            
+    except Exception as e:
+        logger.error(f"Error handling folder {path}: {str(e)}")
+        return False
+
 def cleanup_old_backups(dbx, metrics, retention_days=30):
     """Delete backups older than the specified retention period."""
     try:
         logger.info(f"Starting cleanup of backups older than {retention_days} days...")
         
+        # Ensure backup folder exists
+        backup_folder = '/turso_db_backups'
+        if not ensure_folder_exists(dbx, backup_folder):
+            logger.warning("Could not create backup folder, skipping cleanup")
+            return
+        
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
-        result = dbx.files_list_folder('/turso_db_backups')
+        result = dbx.files_list_folder(backup_folder)
         
         backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})\.sqlite')
         
