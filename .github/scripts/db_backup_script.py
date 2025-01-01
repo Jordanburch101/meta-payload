@@ -110,7 +110,7 @@ def cleanup_old_backups(dbx, metrics, retention_days=30):
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
         result = dbx.files_list_folder(backup_folder)
         
-        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})\.sqlite')
+        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})\.sql')
         
         for entry in result.entries:
             if not isinstance(entry, dropbox.files.FileMetadata):
@@ -165,48 +165,73 @@ async def backup_database():
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
 
-        # Create a temporary file to store the backup
-        with tempfile.NamedTemporaryFile(suffix='.sqlite', delete=False) as temp_file:
-            temp_path = temp_file.name
-
         # Initialize Turso client
         client = create_client(
             url=os.environ['TURSO_DATABASE_URL'],
             auth_token=os.environ['TURSO_AUTH_TOKEN']
         )
 
-        # Perform database backup
-        try:
-            # Execute VACUUM INTO command
-            result = await client.execute("VACUUM INTO ?", [temp_path])
-            logger.info(f"Database backup created at: {temp_path}")
-            
-            # Get file size
-            file_size = os.path.getsize(temp_path)
-            metrics.total_bytes = file_size
-            
-            # Create timestamp for backup filename
-            timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-            dropbox_path = f"/turso_db_backups/backup_{timestamp}.sqlite"
-            
-            # Upload to Dropbox
-            with open(temp_path, 'rb') as f:
-                dbx.files_upload(
-                    f.read(),
-                    dropbox_path,
-                    mode=dropbox.files.WriteMode.overwrite
-                )
-            
-            logger.info(f"Database backup uploaded to Dropbox: {dropbox_path}")
-            metrics.backup_successful = True
-            
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-            
-            # Close database connection
-            await client.close()
+        # Create a temporary file to store the backup
+        with tempfile.NamedTemporaryFile(suffix='.sql', delete=False) as temp_file:
+            temp_path = temp_file.name
+
+            try:
+                # Get all tables
+                tables_result = await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+                tables = [row[0] for row in tables_result.rows]
+
+                # Write schema and data for each table
+                with open(temp_path, 'w', encoding='utf-8') as f:
+                    # Write header
+                    f.write("-- Turso Database Backup\n")
+                    f.write(f"-- Generated: {datetime.now(timezone.utc).isoformat()}\n\n")
+                    f.write("BEGIN TRANSACTION;\n\n")
+
+                    for table in tables:
+                        # Get table schema
+                        schema_result = await client.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [table])
+                        create_table_sql = schema_result.rows[0][0]
+                        f.write(f"{create_table_sql};\n")
+
+                        # Get table data
+                        data_result = await client.execute(f"SELECT * FROM {table}")
+                        for row in data_result.rows:
+                            values = []
+                            for v in row:
+                                if v is None:
+                                    values.append('NULL')
+                                else:
+                                    values.append("'" + str(v).replace("'", "''") + "'")
+                            f.write(f"INSERT INTO {table} VALUES ({', '.join(values)});\n")
+                    
+                    f.write("\nCOMMIT;\n")
+
+                # Get file size
+                file_size = os.path.getsize(temp_path)
+                metrics.total_bytes = file_size
+                
+                # Create timestamp for backup filename
+                timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+                dropbox_path = f"/turso_db_backups/backup_{timestamp}.sql"
+                
+                # Upload to Dropbox
+                with open(temp_path, 'rb') as f:
+                    dbx.files_upload(
+                        f.read(),
+                        dropbox_path,
+                        mode=dropbox.files.WriteMode.overwrite
+                    )
+                
+                logger.info(f"Database backup uploaded to Dropbox: {dropbox_path}")
+                metrics.backup_successful = True
+                
+            finally:
+                # Clean up temporary file
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                
+                # Close database connection
+                await client.close()
 
         # Log summary
         summary = metrics.get_summary()
