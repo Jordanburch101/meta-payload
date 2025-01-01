@@ -110,10 +110,10 @@ def cleanup_old_backups(dbx, metrics, retention_days=30):
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
         result = dbx.files_list_folder(backup_folder)
         
-        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})\.sql')
+        backup_pattern = re.compile(r'backup_(\d{8})_(\d{6})')
         
         for entry in result.entries:
-            if not isinstance(entry, dropbox.files.FileMetadata):
+            if not isinstance(entry, dropbox.files.FolderMetadata):
                 continue
                 
             match = backup_pattern.match(entry.name)
@@ -131,7 +131,7 @@ def cleanup_old_backups(dbx, metrics, retention_days=30):
                     metrics.deleted_backups += 1
                     
             except ValueError as e:
-                logger.warning(f"Could not parse date from filename {entry.name}: {e}")
+                logger.warning(f"Could not parse date from folder name {entry.name}: {e}")
             
         logger.info(f"Cleanup completed. Deleted {metrics.deleted_backups} old backups.")
         
@@ -152,6 +152,21 @@ def ping_heartbeat(status="success", extra_params=None):
     except Exception as e:
         logger.error(f"Failed to ping heartbeat: {str(e)}")
 
+def save_backup_metadata(dbx, base_path, metrics):
+    """Save backup metadata to Dropbox."""
+    try:
+        metadata_path = f"{base_path}/_backup_metadata.json"
+        metadata_content = json.dumps(metrics.get_summary(), indent=2).encode('utf-8')
+        
+        dbx.files_upload(
+            metadata_content,
+            metadata_path,
+            mode=dropbox.files.WriteMode.overwrite
+        )
+        logger.info(f"Backup metadata saved to: {metadata_path}")
+    except Exception as e:
+        logger.error(f"Failed to save backup metadata: {str(e)}")
+
 async def backup_database():
     metrics = BackupMetrics()
     
@@ -164,6 +179,13 @@ async def backup_database():
 
         # Clean up old backups first
         cleanup_old_backups(dbx, metrics)
+
+        # Create timestamp for backup folder
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        backup_folder = f"/turso_db_backups/backup_{timestamp}"
+        
+        # Ensure backup folder exists
+        ensure_folder_exists(dbx, backup_folder)
 
         # Initialize Turso client
         client = create_client(
@@ -210,20 +232,20 @@ async def backup_database():
                 file_size = os.path.getsize(temp_path)
                 metrics.total_bytes = file_size
                 
-                # Create timestamp for backup filename
-                timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-                dropbox_path = f"/turso_db_backups/backup_{timestamp}.sql"
-                
-                # Upload to Dropbox
+                # Upload to Dropbox with new path
+                sql_file_path = f"{backup_folder}/backup.sql"
                 with open(temp_path, 'rb') as f:
                     dbx.files_upload(
                         f.read(),
-                        dropbox_path,
+                        sql_file_path,
                         mode=dropbox.files.WriteMode.overwrite
                     )
                 
-                logger.info(f"Database backup uploaded to Dropbox: {dropbox_path}")
+                logger.info(f"Database backup uploaded to Dropbox: {sql_file_path}")
                 metrics.backup_successful = True
+                
+                # Save metadata
+                save_backup_metadata(dbx, backup_folder, metrics)
                 
             finally:
                 # Clean up temporary file
