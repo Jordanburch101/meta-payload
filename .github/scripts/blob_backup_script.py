@@ -555,10 +555,6 @@ def backup_vercel_blob_to_dropbox():
         status = "fail" if metrics.failed_uploads > 0 else "success"
         ping_heartbeat(status, f"duration={summary['duration_seconds']}&bytes={summary['data_transfer']['bytes_downloaded']}")
 
-        # Add cleanup at the end
-        backup_folder = f"/vercel_blob_backup_{timestamp}"
-        cleanup_duplicates(dbx, backup_folder)
-
     except Exception as e:
         logger.error(f"Backup failed: {str(e)}")
         ping_heartbeat("fail")
