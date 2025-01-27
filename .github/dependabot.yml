@@ -11,8 +11,8 @@ updates:
       interval: "weekly"
       workflow_dispatch:     # Allows manual triggering
     groups:
-      security-updates:
+      all-dependencies:
         patterns:
           - "*"
         update-types:
-          - "security"
+          - "patch"
