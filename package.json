@@ -51,7 +51,7 @@
     "ldrs": "^1.0.2",
     "libsql": "^0.4.6",
     "lucide-react": "^0.454.0",
-    "next": "15.2.3",
+    "next": "15.3.3",
     "payload": "3.9.0",
     "payload-admin-bar": "^1.0.7",
     "plaiceholder": "^3.0.0",
