@@ -55,7 +55,7 @@
     "payload": "3.9.0",
     "payload-admin-bar": "^1.0.7",
     "plaiceholder": "^3.0.0",
-    "posthog-js": "^1.181.0",
+    "posthog-js": "^1.255.1",
     "qss": "^3.0.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
